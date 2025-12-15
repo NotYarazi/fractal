@@ -1,0 +1,25 @@
+@import url('https://umaera.github.io/shared/point/fonts/fonts.css');
+
+:root{
+    --background-color: #000000;
+    --primary-color: #FFFFFF;
+    --purple-color: #4e044e;
+}
+
+body{
+    margin: 2%;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--primary-color);
+    font-family: Outfit, sans-serif;
+    overflow: hidden;
+}
+
+canvas{
+    display: block;
+    margin: 0 auto;
+    background-color: #800080;
+    border: inset 2px solid #41414167;
+    width: 800px;
+    height: 600px;
+}
