@@ -1,88 +1,199 @@
-# Fractal App - Rust WebView Application
+# FRACTAL »» CHAOS SHOOTER
 
-A Rust application that serves the Fractal game using a local web server and displays it in a native webview window.
+**% GEOMETRIC VIOLENCE MEETS BOSS BATTLES IN YOUR BROWSER %**
 
-## Architecture
+---
 
--   **index.html**: Embedded directly in the executable
--   **JavaScript files**: Served from `/lib/classes/` directory next to the executable
--   **Web Server**: Local Axum server running on `http://127.0.0.1:3030`
--   **WebView**: Native window using WRY (WebView Rendering library)
+## #! WHAT IS THIS
 
-## Prerequisites
+Brutal top-down arena shooter built with raw JavaScript & Canvas API. No frameworks. No mercy. No BS.
 
--   Rust (install from https://rustup.rs/)
--   Windows (for other platforms, WebView dependencies may differ)
+**Wave-based mayhem** // **Epic boss fights** // **Reality-warping abilities** // **Inventory management** // **Death by geometry**
 
-## Build Instructions
+## $$ CONTROLS
 
-1. Navigate to the app directory:
+### MOVEMENT & COMBAT
 
-```powershell
-cd app
+-   **WASD / ARROWS** » move your existence
+-   **MOUSE CLICK** » shoot projectiles
+-   **RIGHT CLICK** » use inventory items (bombs/crystals/stars)
+-   **P / ESC** » pause (coward break)
+-   **R** » restart after inevitable death
+
+### INVENTORY SELECTION
+
+-   **1-3** » select inventory slot (bombs, crystals, or stars)
+-   **8** » force-buy star (-80 XP, instant spawn)
+-   **9** » test spawn Mage boss
+-   **7** » test spawn Nova boss
+-   **K** » toggle Nova pause (debug)
+
+## !? ENEMY TYPES
+
+Rectangle-based terror. All unique. All deadly.
+
+-   **DUMB** » walks straight. Zero brain cells.
+-   **MEDIUM** » shoots projectiles at you
+-   **SMART** (yellow center) » dodges your shots & fires back
+-   **TELEPORT** (cyan center) » blinks across the map
+
+## !! BOSS BATTLES
+
+### MAGE BOSS (Purple Magic)
+
+-   **800 HP** with invulnerability shield
+-   **Teleportation** across arena
+-   **Wall summoning** to trap you
+-   **Push/pull forces** yanking you around
+-   **Purple projectile spam**
+-   Spawns at **level 8**, then **every 6 levels**
+-   Drops **Shock Crystal** on defeat
+
+### NOVA BOSS (Chaos Incarnate)
+
+-   **800 HP** ultra-hard challenge
+-   **Lightning lasers** that vaporize everything
+-   **Player teleportation** - she moves YOU
+-   **Enemy summoning** mid-fight
+-   **Color inversion** glitch effect
+-   **UI scrambling** with random symbols
+-   **Glitch areas** distorting reality
+-   **Random disappear/reappear** with health saved
+-   **Key 7** to spawn, **K** to pause
+
+## & INVENTORY SYSTEM (3 SLOTS MAX)
+
+### BOMBS
+
+-   Dropped by dumb enemies (10% chance)
+-   Dropped by medium/smart enemies (30% chance)
+-   **Right-click** to place (3 max at once)
+-   Explode after 2 seconds
+-   Create fire patches
+-   **Destroy walls** (only bombs can!)
+
+### SHOCK CRYSTALS
+
+-   Dropped by **Mage boss** on death
+-   **Right-click** to trigger **screen-wide shockwave**
+-   Kills ALL enemies instantly
+-   Particle explosion madness
+
+### STARS
+
+-   **Purchase from Star Orbs** (80 XP cost)
+-   **Right-click** to throw bouncing projectile
+-   Bounces off screen borders
+-   **Kills everything** it touches
+-   Lasts 6 seconds (shrinks & fades)
+-   Rotates & leaves trail particles
+-   **Force-buy with key 8** (spawns orb instantly)
+
+## % POWER-UPS & COLLECTIBLES
+
+**Yellow squares** = health restoration  
+**Magenta squares** = triple-shot (3 projectiles, 5 seconds)  
+**Green orbs** = XP (5/10 points, collect 80 for star)  
+**Cyan crystals** = shock wave from Mage  
+**Yellow stars** = bouncing killer projectile
+
+## @ GAME FEATURES
+
+```
+» VHS glitch effects & chromatic aberration
+» Screen shake on every kill
+» Dynamic lighting system with shadows
+» Particle explosions (50-150 per event)
+» Level transition animations
+» Death animation that shows your shame
+» Accuracy tracking (hits vs shots fired)
+» Progressive difficulty scaling
+» Boss-specific mechanics
+» Inventory priority system
+» Reality-warping Nova effects
 ```
 
-2. Build the release version:
+## >> SPECIAL MECHANICS
 
-```powershell
-cargo build --release
+### Accuracy System
+
+-   Tracks every shot fired
+-   Counts hits on ANY enemy (not just kills)
+-   Displayed with snarky phrases:
+    -   95%+ = "GODLIKE"
+    -   69% = "NICE"
+    -   <20% = "pathetic"
+
+### Death Messages
+
+-   **Context-aware algorithm** analyzes how you died
+-   Boss-specific roasts
+-   Accuracy-based mockery
+-   Level-dependent shame
+-   Enemy swarm detection
+-   Over **100 unique messages** like:
+    -   "Skill issue"
+    -   "Nova scrambled your existence into pixels"
+    -   "Rectangles: 1, You: 0"
+    -   "Your ancestors are disappointed"
+
+### Wall Mechanics
+
+-   Summoned by Mage boss
+-   **Block projectiles** (no pass-through)
+-   **Only destroyed by bombs** (not shots)
+-   Strategic obstacles
+
+**Requirements:** ES6+ browser. No ancient relics.
+
+## >> CODE STRUCTURE
+
+```
+source/
+├── index.html          (Entry point)
+├── root.css            (VHS-style UI)
+└── classes/
+    ├── Game.js         (2096 lines - main orchestrator)
+    ├── index.js        (Initialization)
+    ├── bosses/         (Mage, Nova)
+    ├── entities/       (Player, Enemy, Wall)
+    ├── projectiles/    (Player, Enemy, NovaLaser)
+    ├── items/          (7 types - bombs, stars, crystals, XP)
+    ├── effects/        (Particles, ScreenShake, Lights, Fire)
+    ├── systems/        (InputHandler)
+    └── utils/          (DeathMessages - 100+ roasts)
 ```
 
-The executable will be created at: `app/target/release/fractal-app.exe`
+## // TECH STACK
 
-## Running the Application
+-   **Vanilla JavaScript (ES6+)** - Pure chaos, zero dependencies
+-   **HTML5 Canvas API** - Raw pixel manipulation
+-   **Modular ES6 Classes** - 23 files, organized by category
+-   **Custom particle systems** - Explosions, trails, glitch aura
+-   **State machines** - Boss AI behaviors
+-   **No frameworks** - Just skill and canvas methods
 
-### Development Mode
+---
 
-From the `app` directory:
+## $ PROGRESSION
 
-```powershell
-cargo run
-```
+**Levels 1-7:** Enemy waves, collect XP, buy stars  
+**Level 8+:** Mage boss spawns (every 6 levels)  
+**Anytime:** Spawn Nova with key 7 (chaos mode)  
+**Death:** Read hilarious message, press R, try not to cry
 
-### Production Mode
+## !! TIPS
 
-1. After building, copy the executable to your desired location
-2. Create a `lib` folder next to the executable
-3. Copy the `classes` folder into the `lib` folder
+-   Dodge > aim (especially at low accuracy)
+-   Save shock crystals for boss fights
+-   Stars are OP but cost 80 XP
+-   Bombs destroy walls (projectiles don't)
+-   Nova inverts colors randomly (it's intentional)
+-   "Skill issue" is a diagnosis, not an insult
+-   The rectangles ARE trying to help you
 
-Directory structure should be:
+---
 
-```
-fractal-app.exe
-lib/
-  classes/
-    Enemy.js
-    EnemyProjectile.js
-    Game.js
-    index.js
-    InputHandler.js
-    Light.js
-    Particle.js
-    Player.js
-    PowerUp.js
-    Projectile.js
-    ScreenShake.js
-```
+**#! FRACTAL »»**
 
-4. Run the executable:
-
-```powershell
-.\fractal-app.exe
-```
-
-## How It Works
-
-1. The application embeds `index.html` at compile time
-2. On startup, it launches a local web server (Axum) on port 3030
-3. The server serves:
-    - `/` - The embedded index.html
-    - `/classes/*` - JavaScript files from the `lib/classes/` directory
-4. A native webview window opens pointing to `http://127.0.0.1:3030`
-5. The game runs in the native window
-
-## Troubleshooting
-
--   **Port 3030 already in use**: Another application is using port 3030. Change the port in `src/main.rs`
--   **JavaScript files not loading**: Ensure the `lib/classes/` folder exists next to the executable
--   **Window doesn't open**: Check if WebView2 runtime is installed (Windows requirement)
+_"Died of cringe" - Death Messages Algorithm, 2025_

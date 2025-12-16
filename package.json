@@ -1,0 +1,95 @@
+{
+  "name": "fractal",
+  "version": "0.6.0",
+  "description": "",
+  "keywords": [
+    "game",
+    "fractal",
+    "electron",
+    "works",
+    "tango",
+    "sauce",
+    "umaera",
+    "stoaticc"
+  ],
+  "homepage": "https://github.com/stoaticc/fractal#readme",
+  "bugs": {
+    "url": "https://github.com/stoaticc/fractal/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stoaticc/fractal.git"
+  },
+  "license": "MIT",
+  "author": "umaera&tango",
+  "type": "commonjs",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --x64",
+    "build:portable": "electron-builder --win portable",
+    "dist": "npm run build:win",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "build": {
+    "appId": "com.fractal.it",
+    "productName": "FRACTAL",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "source/**/*",
+      "!source/changelog.md",
+      "!source/README.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "source/img/4pti9-hlk56-001.ico",
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FRACTAL",
+      "installerIcon": "source/img/4pti9-hlk56-001.ico",
+      "uninstallerIcon": "source/img/4pti9-hlk56-001.ico",
+      "installerHeaderIcon": "source/img/4pti9-hlk56-001.ico",
+      "license": "LICENSE"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "source/img/fractal.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "source/img/fractal.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
+  }
+}

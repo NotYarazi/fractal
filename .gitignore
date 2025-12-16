@@ -1,3 +1,7 @@
 Cargo.lock
 debug/
 target/
+dist/
+.vscode/
+node_modules/
+package-lock.json

@@ -1,4 +1,13 @@
-# 0.0.5 - BOOM AND PLUH!
+# 0.0.6 - Um... technicly.. (16th december)
+- Optimized particle limit
+- Color inversion reduced 
+- Nova lazer: from line to BEAM
+- START SEQUENCE!!!! insert card
+- WINDOW/GAME!!!
+- accuracy -> playerStyleTrack (defence/attack)
+- BETTER GAME OVER SCREEN!
+
+# 0.0.5 - BOOM AND PLUH! (15th december)
 - full screen
 - vhs effects
 - new type of enemy: medium (smart + dumb)

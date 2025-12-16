@@ -2,98 +2,171 @@ export default class NovaLaser {
     constructor(x, y, directionX, directionY) {
         this.x = x;
         this.y = y;
-        this.startX = x;
-        this.startY = y;
         this.directionX = directionX;
         this.directionY = directionY;
-        this.speed = 15;
-        this.width = 8;
-        this.height = 8;
-        this.damage = 25;
-        this.trail = [];
-        this.glowPulse = 0;
+        this.damage = 40; // Massive damage
+        this.thickness = 80; // Thick beam
+        
+        // Warning phase
+        this.warningTimer = 0;
+        this.warningDuration = 40; // ~0.66 seconds warning
+        this.isWarning = true;
+        
+        // Active phase
+        this.activeTimer = 0;
+        this.activeDuration = 25; // ~0.4 seconds of active beam
+        this.isActive = false;
+        
+        // Visual effects
+        this.pulseTimer = 0;
+        this.intensity = 0;
+        
+        // Calculate beam length (goes through entire screen)
+        this.length = 3000; // Long enough to cover any screen
     }
 
     update() {
-        // Move
-        this.x += this.directionX * this.speed;
-        this.y += this.directionY * this.speed;
-
-        // Add trail
-        this.trail.push({
-            x: this.x,
-            y: this.y,
-            alpha: 1
-        });
-
-        // Update trail
-        this.trail = this.trail.filter(t => {
-            t.alpha -= 0.05;
-            return t.alpha > 0;
-        });
-
-        // Limit trail length
-        if (this.trail.length > 30) {
-            this.trail.shift();
+        this.pulseTimer += 0.3;
+        
+        if (this.isWarning) {
+            this.warningTimer++;
+            this.intensity = Math.min(1, this.warningTimer / this.warningDuration);
+            
+            if (this.warningTimer >= this.warningDuration) {
+                this.isWarning = false;
+                this.isActive = true;
+            }
+        } else if (this.isActive) {
+            this.activeTimer++;
+            this.intensity = 1;
+            
+            if (this.activeTimer >= this.activeDuration) {
+                this.isActive = false;
+            }
         }
-
-        this.glowPulse += 0.2;
     }
 
     draw(ctx) {
         ctx.save();
-
-        // Draw trail
-        this.trail.forEach((t, i) => {
-            const gradient = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, 8);
-            gradient.addColorStop(0, `rgba(255, 0, 255, ${t.alpha})`);
-            gradient.addColorStop(0.5, `rgba(0, 255, 255, ${t.alpha * 0.5})`);
-            gradient.addColorStop(1, `rgba(255, 0, 255, 0)`);
-            
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(t.x, t.y, 6, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // Draw laser line from start to current position
-        const pulse = Math.sin(this.glowPulse) * 0.3 + 0.7;
         
-        ctx.strokeStyle = `rgba(255, 0, 255, ${pulse})`;
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = '#ff00ff';
-        ctx.beginPath();
-        ctx.moveTo(this.startX, this.startY);
-        ctx.lineTo(this.x, this.y);
-        ctx.stroke();
-
-        // Draw laser head
-        ctx.fillStyle = '#ff00ff';
-        ctx.shadowBlur = 30 * pulse;
-        ctx.shadowColor = '#00ffff';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Inner bright core
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.width / 4, 0, Math.PI * 2);
-        ctx.fill();
-
+        // Calculate beam endpoints
+        const endX = this.x + this.directionX * this.length;
+        const endY = this.y + this.directionY * this.length;
+        
+        if (this.isWarning) {
+            // Warning line - thin red line that pulses
+            const pulse = Math.sin(this.pulseTimer) * 0.5 + 0.5;
+            const warningThickness = 2 + pulse * 3;
+            
+            ctx.strokeStyle = `rgba(255, 0, 0, ${this.intensity * 0.8})`;
+            ctx.lineWidth = warningThickness;
+            ctx.setLineDash([10, 5]);
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff0000';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        } else if (this.isActive) {
+            // Active beam - thick white beam
+            const pulse = Math.sin(this.pulseTimer * 2) * 0.2 + 0.8;
+            
+            // Outer glow (wider, softer)
+            const outerGlow = ctx.createLinearGradient(
+                this.x, this.y - this.thickness,
+                this.x, this.y + this.thickness
+            );
+            outerGlow.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            outerGlow.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+            outerGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.strokeStyle = outerGlow;
+            ctx.lineWidth = this.thickness * 1.5 * pulse;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            
+            // Main beam (thick white)
+            ctx.strokeStyle = `rgba(255, 255, 255, ${pulse})`;
+            ctx.lineWidth = this.thickness;
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            
+            // Inner core (very bright)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = this.thickness * 0.5;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+        
         ctx.restore();
     }
 
     isOffScreen(width, height) {
-        return this.x < -50 || this.x > width + 50 || 
-               this.y < -50 || this.y > height + 50;
+        // Beam lasts for warning + active duration
+        return !this.isWarning && !this.isActive;
     }
 
     checkCollision(entity) {
-        const dx = this.x - (entity.x + entity.width / 2);
-        const dy = this.y - (entity.y + entity.height / 2);
+        // Only collide during active phase
+        if (!this.isActive) return false;
+        
+        // Point-to-line distance calculation
+        const entityCenterX = entity.x + entity.width / 2;
+        const entityCenterY = entity.y + entity.height / 2;
+        
+        // Calculate beam as line segment
+        const endX = this.x + this.directionX * this.length;
+        const endY = this.y + this.directionY * this.length;
+        
+        // Vector from start to end of beam
+        const lineX = endX - this.x;
+        const lineY = endY - this.y;
+        const lineLength = Math.sqrt(lineX * lineX + lineY * lineY);
+        
+        // Normalized direction
+        const normX = lineX / lineLength;
+        const normY = lineY / lineLength;
+        
+        // Vector from beam start to entity
+        const toEntityX = entityCenterX - this.x;
+        const toEntityY = entityCenterY - this.y;
+        
+        // Project entity onto beam line
+        const projection = toEntityX * normX + toEntityY * normY;
+        
+        // Find closest point on beam
+        const closestX = this.x + normX * Math.max(0, Math.min(projection, lineLength));
+        const closestY = this.y + normY * Math.max(0, Math.min(projection, lineLength));
+        
+        // Distance from entity to closest point on beam
+        const dx = entityCenterX - closestX;
+        const dy = entityCenterY - closestY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < (this.width / 2 + Math.min(entity.width, entity.height) / 2);
+        
+        // Check if within beam thickness
+        return distance < (this.thickness / 2 + Math.min(entity.width, entity.height) / 2);
+    }
+    
+    getScreenShake() {
+        // Return screen shake intensity based on phase
+        if (this.isActive) {
+            return 15; // Strong shake during active beam
+        } else if (this.isWarning && this.warningTimer > this.warningDuration * 0.7) {
+            return 5; // Small shake near end of warning
+        }
+        return 0;
     }
 }

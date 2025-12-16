@@ -5,10 +5,10 @@ export default class Mage {
         this.width = width;
         this.height = height;
         this.speed = 1.5;
-        this.health = 500;
-        this.maxHealth = 500;
+        this.health = 400;
+        this.maxHealth = 400;
         this.color = '#8800ff';
-        this.damage = 15;
+        this.damage = 12;
 
         // AI behaviors
         this.behaviorTimer = 0;
@@ -17,7 +17,7 @@ export default class Mage {
 
         // Abilities
         this.shootTimer = 0;
-        this.shootInterval = 90; // Shoot every 1.5 seconds
+        this.shootInterval = 120; // Shoot every 2 seconds
         this.teleportTimer = 0;
         this.teleportInterval = 240; // Teleport every 4 seconds
         this.wallSummonTimer = 0;

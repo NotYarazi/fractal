@@ -30,10 +30,12 @@ export default class Particle {
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
         
-        // Add glow effect
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = this.color;
-        ctx.fill();
+        // Add optimized glow effect - only for larger particles
+        if (this.size > 2.5) {
+            ctx.shadowBlur = 10; // Reduced from 20
+            ctx.shadowColor = this.color;
+            ctx.fill();
+        }
         ctx.restore();
     }
 

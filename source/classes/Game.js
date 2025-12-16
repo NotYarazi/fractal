@@ -42,6 +42,38 @@ export default class Game {
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
+        /* VHS BOOT SEQUENCE */
+        this.vhsState = 'waiting'; // waiting, booting, ready
+        this.vhsBootTimer = 0;
+        this.vhsBootDuration = 280; // ~3 seconds boot sequence
+        this.vhsStatic = [];
+        this.vhsBlinkTimer = 0;
+        this.vhsLogo = document.getElementById('vhsLogo');
+        
+        // Generate static pattern
+        for (let i = 0; i < 1000; i++) {
+            this.vhsStatic.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                brightness: Math.random()
+            });
+        }
+        
+        // Click to start VHS boot
+        this.canvas.addEventListener('click', () => {
+            if (this.vhsState === 'waiting') {
+                this.vhsState = 'booting';
+                this.vhsBootTimer = 0;
+            }
+        }, { once: true });
+
+        // Auto-pause when window loses focus
+        window.addEventListener('blur', () => {
+            if (this.vhsState === 'ready' && !this.gameOver && !this.paused) {
+                this.paused = true;
+            }
+        });
+
         this.init();
 
         // Start game loop
@@ -62,6 +94,7 @@ export default class Game {
         this.projectiles = [];
         this.enemyProjectiles = [];
         this.particles = [];
+        this.MAX_PARTICLES = 500; // Performance cap
         this.powerUps = [];
         this.xpOrbs = [];
         this.shockCrystals = []; // Shock crystals to collect
@@ -97,10 +130,13 @@ export default class Game {
         this.deathMessage = '';
         this.deathCause = '';
 
-        /* STATS INFO */
-        this.shotsFired = 0;
-        this.shotsHit = 0;
-        this.hitEnemies = new Set(); // Track which enemies have been hit per shot
+        /* PLAYSTYLE TRACKING */
+        this.damageDealt = 0; // Attack metric
+        this.damageTaken = 0; // Defense metric
+        this.shotsHit = 0; // Attack metric
+        this.timeNearEnemies = 0; // Attack metric
+        this.timeFarFromEnemies = 0; // Defense metric
+        this.currentPlaystyle = 'ATTACK'; // Current playstyle display
 
         this.enemySpawnTimer = 0;
         this.enemySpawnInterval = 120;
@@ -117,6 +153,9 @@ export default class Game {
         this.glitchTimer = 0;
         this.glitchActive = false;
         this.glitchIntensity = 0;
+        this.glitchSourceX = 0;
+        this.glitchSourceY = 0;
+        this.glitchRadius = 0;
         this.chromaticAberration = 0;
         this.scanlineOffset = 0;
 
@@ -146,6 +185,11 @@ export default class Game {
             'rgba(0, 255, 0, 0.3)'
         );
         this.lightingSystem.addLight(this.playerLight);
+        
+        // Get VHS logo element
+        if (!this.vhsLogo) {
+            this.vhsLogo = document.getElementById('vhsLogo');
+        }
     }
 
     reset() {
@@ -153,6 +197,25 @@ export default class Game {
     }
 
     updateUI() {
+        // Hide UI during VHS boot sequence
+        const hudOverlay = document.querySelector('.hud-overlay');
+        const controlsAscii = document.querySelector('.controls-ascii');
+        const bombSlots = document.getElementById('bombSlots');
+        const crystalSlots = document.getElementById('crystalSlots');
+        const starSlots = document.getElementById('starSlots');
+        
+        if (this.vhsState !== 'ready') {
+            if (hudOverlay) hudOverlay.style.display = 'none';
+            if (controlsAscii) controlsAscii.style.display = 'none';
+            if (bombSlots) bombSlots.style.display = 'none';
+            if (crystalSlots) crystalSlots.style.display = 'none';
+            if (starSlots) starSlots.style.display = 'none';
+            return;
+        }
+        
+        // Show UI when game is ready
+        if (hudOverlay) hudOverlay.style.display = 'block';
+        
         const levelDisplay = document.getElementById('levelDisplay');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const healthBar = document.getElementById('healthBar');
@@ -160,7 +223,6 @@ export default class Game {
         const accuracyDisplay = document.getElementById('accuracyDisplay');
         const multishotPanel = document.getElementById('multishotPanel');
         const multishotProgress = document.getElementById('multishotProgress');
-        const controlsAscii = document.querySelector('.controls-ascii');
 
         // Hide controls after first input + 10 seconds
         if (controlsAscii) {
@@ -215,9 +277,9 @@ export default class Game {
             }
         }
 
-        // Scramble text if Nova is active
+        // Scramble text if Nova is active (reduced for readability)
         const scrambleText = (text) => {
-            if (this.nova && this.nova.isActive && Math.random() > 0.6) {
+            if (this.nova && this.nova.isActive && Math.random() > 0.8) {
                 const chars = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
                 return text.split('').map(char =>
                     Math.random() > 0.7 ? chars[Math.floor(Math.random() * chars.length)] : char
@@ -246,9 +308,12 @@ export default class Game {
             }
         }
 
-        // Accuracy
-        const accuracy = this.getAccuracy();
-        if (accuracyDisplay) accuracyDisplay.textContent = `ACC: ${accuracy}%`;
+        // Playstyle (renamed from accuracy)
+        const playstyle = this.getPlaystyle();
+        if (accuracyDisplay) accuracyDisplay.textContent = playstyle;
+
+        // Debug: Show particle count (uncomment to enable)
+        // if (accuracyDisplay) accuracyDisplay.textContent = `PARTS: ${this.particles.length}/${this.MAX_PARTICLES}`;
 
         // Multi-shot
         if (multishotPanel && multishotProgress) {
@@ -262,21 +327,37 @@ export default class Game {
         }
     }
 
-    getAccuracy() {
-        if (this.shotsFired === 0) return 0;
-        return Math.floor((this.shotsHit / this.shotsFired) * 100);
+    getPlaystyle() {
+        // Calculate attack score - pure offense metrics
+        const attackScore = this.damageDealt + (this.shotsHit * 5);
+        
+        // Calculate defense score - survival/damage avoidance (inverse of damage taken)
+        const survivalBonus = Math.max(0, 500 - this.damageTaken); // High bonus for low damage
+        const defenseScore = survivalBonus;
+        
+        // Update current playstyle for HUD
+        if (attackScore > defenseScore * 1.5) { // Bias toward showing ATTACK
+            this.currentPlaystyle = 'ATTACK';
+        } else {
+            this.currentPlaystyle = 'DEFENCE';
+        }
+        
+        return this.currentPlaystyle;
     }
-
-    getAccuracyPhrase(accuracy) {
-        if (accuracy === 69) return 'NICE';
-        if (accuracy >= 95) return 'GODLIKE';
-        if (accuracy >= 85) return 'INSANE';
-        if (accuracy >= 75) return 'good... ig';
-        if (accuracy >= 65) return 'skibidi';
-        if (accuracy >= 50) return 'bro.. nah';
-        if (accuracy >= 35) return 'just give up';
-        if (accuracy >= 20) return 'so bad lol';
-        return 'pathetic';
+    
+    getPlaystylePercentage() {
+        // Return percentage for attack vs defense (for death screen)
+        const attackScore = this.damageDealt + (this.shotsHit * 5);
+        const survivalBonus = Math.max(0, 500 - this.damageTaken);
+        const defenseScore = survivalBonus;
+        const total = attackScore + defenseScore;
+        
+        if (total === 0) return { attack: 50, defense: 50 };
+        
+        return {
+            attack: Math.round((attackScore / total) * 100),
+            defense: Math.round((defenseScore / total) * 100)
+        };
     }
 
     easeOutElastic(x) {
@@ -409,8 +490,8 @@ export default class Game {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             this.ctx.fillRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
 
-            // Glitchy border
-            this.ctx.strokeStyle = Math.random() > 0.9 ? '#00ffff' : '#ff00ff';
+            // Glitchy border (reduced frequency)
+            this.ctx.strokeStyle = Math.random() > 0.95 ? '#00ffff' : '#ff00ff';
             this.ctx.lineWidth = 3;
             this.ctx.strokeRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
 
@@ -426,18 +507,18 @@ export default class Game {
             this.ctx.fillStyle = gradient;
             this.ctx.fillRect(barX, barY, healthWidth, barHeight);
 
-            // Glitch overlay
-            if (Math.random() > 0.8) {
-                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            // Glitch overlay (reduced frequency and opacity)
+            if (Math.random() > 0.9) {
+                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
                 this.ctx.fillRect(barX + Math.random() * healthWidth, barY, 20, barHeight);
             }
 
-            // Text with glitch
+            // Text with glitch (reduced)
             this.ctx.fillStyle = '#ffffff';
             this.ctx.font = 'bold 18px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.shadowBlur = 15;
-            this.ctx.shadowColor = Math.random() > 0.8 ? '#00ffff' : '#ff00ff';
+            this.ctx.shadowColor = Math.random() > 0.9 ? '#00ffff' : '#ff00ff';
             this.ctx.fillText(`NOVA BOSS`, this.width / 2, barY - 18);
             this.ctx.fillText(`${Math.ceil(this.nova.health)} / ${this.nova.maxHealth}`, this.width / 2, barY + barHeight / 2 + 6);
             this.ctx.shadowBlur = 0;
@@ -567,7 +648,7 @@ export default class Game {
                         newTargetY
                     );
                     this.projectiles.push(projectile);
-                    this.shotsFired++;
+                    // Removed shotsFired tracking - accuracy now based on hits only
                 });
             } else {
                 // Normal single shot
@@ -578,11 +659,11 @@ export default class Game {
                     targetY
                 );
                 this.projectiles.push(projectile);
-                this.shotsFired++;
+                // Removed shotsFired tracking - accuracy now based on hits only
             }
 
             // Muzzle flash particles
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 3; i++) {
                 this.particles.push(new Particle(
                     this.player.getCenterX(),
                     this.player.getCenterY(),
@@ -704,7 +785,7 @@ export default class Game {
 
             // Visual feedback
             this.screenShake.shake(10, 15);
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 10; i++) {
                 this.particles.push(new Particle(
                     this.player.getCenterX(),
                     this.player.getCenterY(),
@@ -716,7 +797,7 @@ export default class Game {
 
     triggerShockwave() {
         // Create massive shockwave particles
-        for (let i = 0; i < 200; i++) {
+        for (let i = 0; i < 100; i++) {
             this.particles.push(new Particle(
                 this.player.getCenterX(),
                 this.player.getCenterY(),
@@ -726,7 +807,7 @@ export default class Game {
 
         // Screen shake
         this.screenShake.shake(50, 60);
-        this.triggerGlitch(20, 1.0);
+        this.triggerGlitch(20, 1.0, this.player.getCenterX(), this.player.getCenterY(), 300);
 
         // Kill all enemies
         for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -778,7 +859,7 @@ export default class Game {
             this.starOrbs = [];
 
             // Visual feedback
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 15; i++) {
                 this.particles.push(new Particle(
                     this.player.getCenterX(),
                     this.player.getCenterY(),
@@ -799,7 +880,7 @@ export default class Game {
         this.enemyProjectiles = [];
 
         // Mage spawn particles
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 60; i++) {
             this.particles.push(new ExplosionParticle(
                 this.mage.getCenterX(),
                 this.mage.getCenterY()
@@ -807,7 +888,7 @@ export default class Game {
         }
 
         this.screenShake.shake(30, 40);
-        this.triggerGlitch(10, 1.0);
+        this.triggerGlitch(10, 1.0, this.mage.getCenterX(), this.mage.getCenterY(), 250);
     }
 
     spawnNova() {
@@ -821,7 +902,7 @@ export default class Game {
         this.enemyProjectiles = [];
 
         // Nova spawn particles
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 80; i++) {
             this.particles.push(new ExplosionParticle(
                 this.nova.getCenterX(),
                 this.nova.getCenterY()
@@ -829,13 +910,16 @@ export default class Game {
         }
 
         this.screenShake.shake(40, 50);
-        this.triggerGlitch(15, 1.0);
+        this.triggerGlitch(15, 1.0, this.nova.getCenterX(), this.nova.getCenterY(), 300);
     }
 
-    triggerGlitch(intensity = 5, chance = 0.4) {
+    triggerGlitch(intensity = 5, chance = 0.4, x = null, y = null, radius = 200) {
         if (Math.random() < chance) {
             this.glitchActive = true;
             this.glitchIntensity = intensity;
+            this.glitchSourceX = x !== null ? x : this.width / 2;
+            this.glitchSourceY = y !== null ? y : this.height / 2;
+            this.glitchRadius = radius;
             this.chromaticAberration = intensity * 0.3;
         }
     }
@@ -852,7 +936,7 @@ export default class Game {
         }, 200);
 
         // YAY particles
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 50; i++) {
             this.particles.push(new Particle(
                 this.width / 2,
                 this.height / 2,
@@ -868,7 +952,7 @@ export default class Game {
         this.deathCause = DeathMessages.getDeathCause(this);
 
         // Death explosion particles
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 30; i++) {
             this.particles.push(new ExplosionParticle(
                 this.player.getCenterX(),
                 this.player.getCenterY()
@@ -879,6 +963,20 @@ export default class Game {
     }
 
     update() {
+        // VHS boot sequence
+        if (this.vhsState === 'waiting') {
+            this.vhsBlinkTimer++;
+            return; // Don't update game while waiting
+        }
+        
+        if (this.vhsState === 'booting') {
+            this.vhsBootTimer++;
+            if (this.vhsBootTimer >= this.vhsBootDuration) {
+                this.vhsState = 'ready';
+            }
+            return; // Don't update game during boot
+        }
+        
         // Check for reset
         if (this.input.consumeResetPress()) {
             this.reset();
@@ -971,6 +1069,7 @@ export default class Game {
 
             // Check collision with player
             if (enemy.checkCollision(this.player)) {
+                this.damageTaken += enemy.damage;
                 if (this.player.takeDamage(enemy.damage)) {
                     this.startDeathAnimation();
                 }
@@ -1043,7 +1142,7 @@ export default class Game {
                     this.screenShake.shake(10, 15);
 
                     // Visual effect
-                    for (let i = 0; i < 20; i++) {
+                    for (let i = 0; i < 10; i++) {
                         this.particles.push(new Particle(
                             this.player.getCenterX(),
                             this.player.getCenterY(),
@@ -1055,6 +1154,7 @@ export default class Game {
 
             // Check collision with player
             if (this.mage.checkCollision(this.player)) {
+                this.damageTaken += this.mage.damage;
                 if (this.player.takeDamage(this.mage.damage)) {
                     this.startDeathAnimation();
                 }
@@ -1100,7 +1200,7 @@ export default class Game {
                 const newY = Math.random() * (this.height - this.player.height);
 
                 // Visual effect at old position
-                for (let i = 0; i < 50; i++) {
+                for (let i = 0; i < 25; i++) {
                     this.particles.push(new ExplosionParticle(
                         this.player.getCenterX(),
                         this.player.getCenterY()
@@ -1111,7 +1211,7 @@ export default class Game {
                 this.player.y = newY;
 
                 // Visual effect at new position
-                for (let i = 0; i < 50; i++) {
+                for (let i = 0; i < 25; i++) {
                     this.particles.push(new ExplosionParticle(
                         this.player.getCenterX(),
                         this.player.getCenterY()
@@ -1119,7 +1219,7 @@ export default class Game {
                 }
 
                 this.screenShake.shake(20, 25);
-                this.triggerGlitch(12, 1.0);
+                this.triggerGlitch(12, 1.0, this.player.getCenterX(), this.player.getCenterY(), 250);
             }
 
             // Nova summons enemies
@@ -1139,18 +1239,19 @@ export default class Game {
                 }
 
                 this.screenShake.shake(15, 18);
-                this.triggerGlitch(8, 0.8);
+                this.triggerGlitch(8, 0.8, this.nova.getCenterX(), this.nova.getCenterY(), 200);
             }
 
             // Nova disappear/reappear
             if (this.nova.shouldDisappear()) {
                 this.nova.disappear();
                 this.screenShake.shake(25, 30);
-                this.triggerGlitch(15, 1.0);
+                this.triggerGlitch(15, 1.0, this.nova.getCenterX(), this.nova.getCenterY(), 250);
             }
 
             // Check collision with player
             if (this.nova.checkCollision(this.player)) {
+                this.damageTaken += this.nova.damage;
                 if (this.player.takeDamage(this.nova.damage)) {
                     this.startDeathAnimation();
                 }
@@ -1168,6 +1269,7 @@ export default class Game {
 
             // Check collision with player
             if (proj.checkCollision(this.player)) {
+                this.damageTaken += proj.damage;
                 if (this.player.takeDamage(proj.damage)) {
                     this.startDeathAnimation();
                 }
@@ -1181,8 +1283,8 @@ export default class Game {
         this.projectiles = this.projectiles.filter(projectile => {
             projectile.update();
 
-            // Add trail particles
-            if (Math.random() < 0.5) {
+            // Add trail particles - skip if too many particles already
+            if (this.particles.length < this.MAX_PARTICLES * 0.7 && Math.random() < 0.3) {
                 this.particles.push(new ProjectileTrail(projectile.x, projectile.y));
             }
 
@@ -1194,14 +1296,15 @@ export default class Game {
             // Check collision with enemies
             for (let i = this.enemies.length - 1; i >= 0; i--) {
                 if (projectile.checkCollision(this.enemies[i])) {
-                    // Count hit whenever projectile hits an enemy
+                    // Count hit and track damage dealt
                     this.shotsHit++;
+                    this.damageDealt += projectile.damage;
 
                     if (this.enemies[i].takeDamage(projectile.damage)) {
                         const enemy = this.enemies[i];
 
                         // Create explosion
-                        for (let j = 0; j < 30; j++) {
+                        for (let j = 0; j < 20; j++) {
                             this.particles.push(new ExplosionParticle(
                                 enemy.getCenterX(),
                                 enemy.getCenterY()
@@ -1211,9 +1314,9 @@ export default class Game {
                         // Screen shake - MORE INTENSE!
                         this.screenShake.shake(20, 25);
 
-                        // Trigger VHS glitch effect only on smart enemy kills (25% chance)
+                        // Trigger VHS glitch effect only on smart enemy kills (25% chance) - localized
                         if (enemy.type === 'smart') {
-                            this.triggerGlitch(8, 0.25);
+                            this.triggerGlitch(8, 0.25, enemy.getCenterX(), enemy.getCenterY(), 150);
                         }
 
                         // 10% chance for dumb enemies to spawn bomb on death
@@ -1271,9 +1374,10 @@ export default class Game {
 
             // Check collision with Mage
             if (this.mage && projectile.checkCollision(this.mage)) {
+                this.damageDealt += projectile.damage;
                 if (this.mage.takeDamage(projectile.damage)) {
                     // Mage defeated!
-                    for (let i = 0; i < 100; i++) {
+                    for (let i = 0; i < 60; i++) {
                         this.particles.push(new ExplosionParticle(
                             this.mage.getCenterX(),
                             this.mage.getCenterY()
@@ -1281,7 +1385,7 @@ export default class Game {
                     }
 
                     this.screenShake.shake(40, 50);
-                    this.triggerGlitch(15, 1.0);
+                    this.triggerGlitch(15, 1.0, this.mage.getCenterX(), this.mage.getCenterY(), 300);
 
                     // Drop lots of XP
                     for (let i = 0; i < 20; i++) {
@@ -1311,9 +1415,10 @@ export default class Game {
 
             // Check collision with Nova
             if (this.nova && this.nova.isActive && projectile.checkCollision(this.nova)) {
+                this.damageDealt += projectile.damage;
                 if (this.nova.takeDamage(projectile.damage)) {
                     // Nova defeated!
-                    for (let i = 0; i < 200; i++) {
+                    for (let i = 0; i < 100; i++) {
                         this.particles.push(new ExplosionParticle(
                             this.nova.getCenterX(),
                             this.nova.getCenterY()
@@ -1321,7 +1426,7 @@ export default class Game {
                     }
 
                     this.screenShake.shake(50, 60);
-                    this.triggerGlitch(20, 1.0);
+                    this.triggerGlitch(20, 1.0, this.nova.getCenterX(), this.nova.getCenterY(), 400);
 
                     // Drop massive XP
                     for (let i = 0; i < 30; i++) {
@@ -1365,6 +1470,11 @@ export default class Game {
             particle.update();
             return !particle.isDead();
         });
+        
+        // Enforce particle cap - remove oldest particles if exceeded
+        if (this.particles.length > this.MAX_PARTICLES) {
+            this.particles.splice(0, this.particles.length - this.MAX_PARTICLES);
+        }
 
         // Update power-ups
         this.powerUps.forEach(powerUp => powerUp.update());
@@ -1378,7 +1488,7 @@ export default class Game {
                 this.player.addShockCrystal();
 
                 // Collection particles
-                for (let j = 0; j < 20; j++) {
+                for (let j = 0; j < 12; j++) {
                     this.particles.push(new Particle(
                         this.shockCrystals[i].getCenterX(),
                         this.shockCrystals[i].getCenterY(),
@@ -1407,7 +1517,7 @@ export default class Game {
                 this.player.addStar();
 
                 // Collection particles
-                for (let j = 0; j < 30; j++) {
+                for (let j = 0; j < 18; j++) {
                     this.particles.push(new Particle(
                         orb.getCenterX(),
                         orb.getCenterY(),
@@ -1438,7 +1548,7 @@ export default class Game {
                     const enemy = this.enemies[j];
 
                     // Kill enemy instantly
-                    for (let k = 0; k < 30; k++) {
+                    for (let k = 0; k < 15; k++) {
                         this.particles.push(new ExplosionParticle(
                             enemy.getCenterX(),
                             enemy.getCenterY()
@@ -1476,7 +1586,13 @@ export default class Game {
         for (let i = this.novaLasers.length - 1; i >= 0; i--) {
             const laser = this.novaLasers[i];
 
-            // Remove if off screen
+            // Apply screen shake from laser
+            const shakeAmount = laser.getScreenShake();
+            if (shakeAmount > 0) {
+                this.screenShake.shake(shakeAmount, shakeAmount);
+            }
+
+            // Remove if off screen (beam expired)
             if (laser.isOffScreen(this.width, this.height)) {
                 this.novaLasers.splice(i, 1);
                 continue;
@@ -1484,11 +1600,41 @@ export default class Game {
 
             // Check collision with player
             if (laser.checkCollision(this.player)) {
+                this.damageTaken += laser.damage;
                 if (this.player.takeDamage(laser.damage)) {
                     this.startDeathAnimation();
                 }
-                this.novaLasers.splice(i, 1);
-                continue;
+            }
+            
+            // Check collision with enemies (kills them all)
+            for (let j = this.enemies.length - 1; j >= 0; j--) {
+                if (laser.checkCollision(this.enemies[j])) {
+                    const enemy = this.enemies[j];
+                    
+                    // Instant kill
+                    for (let k = 0; k < 15; k++) {
+                        this.particles.push(new ExplosionParticle(
+                            enemy.getCenterX(),
+                            enemy.getCenterY()
+                        ));
+                    }
+                    
+                    // Drop XP
+                    const orbCount = enemy.type === 'smart' ? 5 : enemy.type === 'medium' ? 3 : enemy.type === 'teleport' ? 6 : 2;
+                    const orbValue = enemy.type === 'smart' ? 10 : enemy.type === 'teleport' ? 10 : enemy.type === 'medium' ? 5 : 5;
+                    
+                    for (let k = 0; k < orbCount; k++) {
+                        this.xpOrbs.push(new XPOrb(
+                            enemy.getCenterX(),
+                            enemy.getCenterY(),
+                            orbValue
+                        ));
+                    }
+                    
+                    this.score += 100;
+                    this.enemiesKilled++;
+                    this.enemies.splice(j, 1);
+                }
             }
         }
 
@@ -1505,7 +1651,7 @@ export default class Game {
                 this.score += this.xpOrbs[i].value;
 
                 // Collection particles
-                for (let j = 0; j < 5; j++) {
+                for (let j = 0; j < 3; j++) {
                     this.particles.push(new Particle(
                         this.xpOrbs[i].x,
                         this.xpOrbs[i].y,
@@ -1552,7 +1698,7 @@ export default class Game {
                     this.player.health = Math.min(100, this.player.health + 30);
 
                     // Healing particles
-                    for (let j = 0; j < 20; j++) {
+                    for (let j = 0; j < 12; j++) {
                         this.particles.push(new Particle(
                             powerUp.getCenterX(),
                             powerUp.getCenterY(),
@@ -1565,7 +1711,7 @@ export default class Game {
                     this.multiShotTimer = this.multiShotDuration;
 
                     // Power-up particles
-                    for (let j = 0; j < 20; j++) {
+                    for (let j = 0; j < 12; j++) {
                         this.particles.push(new Particle(
                             powerUp.getCenterX(),
                             powerUp.getCenterY(),
@@ -1665,7 +1811,7 @@ export default class Game {
 
             if (bomb.shouldExplode()) {
                 // Create explosion
-                for (let i = 0; i < 50; i++) {
+                for (let i = 0; i < 30; i++) {
                     this.particles.push(new ExplosionParticle(
                         bomb.x,
                         bomb.y
@@ -1712,6 +1858,7 @@ export default class Game {
                 const pdy = this.player.getCenterY() - bomb.y;
                 const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
                 if (pdist < bomb.explosionRadius) {
+                    this.damageTaken += 30;
                     if (this.player.takeDamage(30)) {
                         this.startDeathAnimation();
                     }
@@ -1719,7 +1866,7 @@ export default class Game {
 
                 // Screen shake and glitch
                 this.screenShake.shake(25, 30);
-                this.triggerGlitch(10, 1.0);
+                this.triggerGlitch(10, 1.0, bomb.x + bomb.width / 2, bomb.y + bomb.height / 2, 250);
 
                 return false;
             }
@@ -1794,7 +1941,7 @@ export default class Game {
 
             if (bomb.shouldExplode()) {
                 // Create explosion
-                for (let i = 0; i < 40; i++) {
+                for (let i = 0; i < 25; i++) {
                     this.particles.push(new ExplosionParticle(
                         bomb.x,
                         bomb.y
@@ -1856,28 +2003,191 @@ export default class Game {
     }
 
     draw() {
+        // VHS WAITING STATE - "INSERT CARD"
+        if (this.vhsState === 'waiting') {
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+            
+            // Blinking "INSERT CARD" text
+            const blink = Math.floor(this.vhsBlinkTimer / 30) % 2 === 0;
+            if (blink) {
+                this.ctx.fillStyle = '#00ff00';
+                this.ctx.font = 'bold 32px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.shadowBlur = 15;
+                this.ctx.shadowColor = '#00ff00';
+                this.ctx.fillText('>>> INSERT CARD <<<', this.width / 2, this.height / 2);
+                this.ctx.shadowBlur = 0;
+                
+                // Subtle hint
+                this.ctx.fillStyle = '#00ff00';
+                this.ctx.font = '14px Courier New';
+                this.ctx.globalAlpha = 0.5;
+                this.ctx.fillText('(click anywhere)', this.width / 2, this.height / 2 + 40);
+                this.ctx.globalAlpha = 1;
+                this.ctx.textAlign = 'left';
+            }
+            return;
+        }
+        
+        // VHS BOOT SEQUENCE
+        if (this.vhsState === 'booting') {
+            const progress = this.vhsBootTimer / this.vhsBootDuration;
+            
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+            
+            // Phase 1: Heavy static (0-30%)
+            if (progress < 0.3) {
+                const staticIntensity = 1 - (progress / 0.3);
+                this.vhsStatic.forEach(s => {
+                    this.ctx.fillStyle = `rgba(${s.brightness * 255}, ${s.brightness * 255}, ${s.brightness * 255}, ${staticIntensity})`;
+                    this.ctx.fillRect(s.x, s.y, 2, 2);
+                });
+                
+                // Tracking lines
+                for (let i = 0; i < 5; i++) {
+                    const y = (this.vhsBootTimer * 10 + i * 100) % this.height;
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    this.ctx.fillRect(0, y, this.width, 3);
+                }
+            }
+            // Phase 2: Color bars (30-50%)
+            else if (progress < 0.5) {
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
+                const barWidth = this.width / colors.length;
+                colors.forEach((color, i) => {
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(i * barWidth, 0, barWidth, this.height);
+                });
+                
+                // Glitch effect
+                if (Math.random() > 0.7) {
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.fillRect(Math.random() * this.width, Math.random() * this.height, 100, 50);
+                }
+            }
+            // Phase 3: Logo with VHS effects (50-70%)
+            else if (progress < 0.7) {
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                // Show logo image with effects
+                if (this.vhsLogo) {
+                    this.vhsLogo.style.display = 'block';
+                    this.vhsLogo.style.left = '50%';
+                    this.vhsLogo.style.top = '50%';
+                    
+                    // Glitch effect on logo
+                    const glitch = Math.random() > 0.7;
+                    if (glitch) {
+                        const offset = (Math.random() - 0.5) * 20;
+                        this.vhsLogo.style.transform = `translate(calc(-50% + ${offset}px), -50%)`;
+                        this.vhsLogo.style.filter = `hue-rotate(${Math.random() * 360}deg) saturate(${1 + Math.random() * 2})`;
+                    } else {
+                        this.vhsLogo.style.transform = 'translate(-50%, -50%)';
+                        this.vhsLogo.style.filter = 'none';
+                    }
+                }
+                
+                // "FRACTAL" text appears below logo
+                const textProgress = (progress - 0.5) / 0.2; // 0 to 1 within phase 3
+                if (textProgress > 0.3) { // Show text after logo has been visible for a bit
+                    const textGlitch = Math.random() > 0.8;
+                    const xOffset = textGlitch ? (Math.random() - 0.5) * 15 : 0;
+                    
+                    this.ctx.fillStyle = '#00ff00';
+                    this.ctx.font = 'bold 64px Courier New';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.shadowBlur = 20;
+                    this.ctx.shadowColor = '#00ff00';
+                    
+                    // RGB split effect on text
+                    if (textGlitch) {
+                        this.ctx.fillStyle = '#ff0000';
+                        this.ctx.fillText('FRACTAL', this.width / 2 + xOffset - 2, this.height / 2 + 250);
+                        this.ctx.fillStyle = '#00ff00';
+                        this.ctx.fillText('FRACTAL', this.width / 2 + xOffset, this.height / 2 + 250);
+                        this.ctx.fillStyle = '#0000ff';
+                        this.ctx.fillText('FRACTAL', this.width / 2 + xOffset + 2, this.height / 2 + 250);
+                    } else {
+                        this.ctx.fillText('FRACTAL', this.width / 2 + xOffset, this.height / 2 + 250);
+                    }
+                    
+                    this.ctx.shadowBlur = 0;
+                    this.ctx.textAlign = 'left';
+                }
+                
+                // Scanlines over logo
+                this.ctx.globalAlpha = 0.3;
+                for (let y = 0; y < this.height; y += 4) {
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.fillRect(0, y, this.width, 2);
+                }
+                this.ctx.globalAlpha = 1;
+                
+                // Static overlay
+                if (Math.random() > 0.8) {
+                    this.vhsStatic.slice(0, 200).forEach(s => {
+                        this.ctx.fillStyle = `rgba(${s.brightness * 255}, ${s.brightness * 255}, ${s.brightness * 255}, 0.3)`;
+                        this.ctx.fillRect(s.x, s.y, 2, 2);
+                    });
+                }
+            }
+            // Phase 4: Fade to game (70-100%)
+            else {
+                // Hide logo
+                if (this.vhsLogo) {
+                    this.vhsLogo.style.display = 'none';
+                }
+                if (this.vhsLogo) {
+                    this.vhsLogo.style.display = 'none';
+                }
+                
+                // Draw game normally
+                this.drawGame();
+                
+                // Fade out overlay
+                const fadeProgress = (progress - 0.7) / 0.3;
+                this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - fadeProgress})`;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                // Scanlines fade out
+                this.ctx.globalAlpha = 1 - fadeProgress;
+                for (let y = 0; y < this.height; y += 4) {
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.fillRect(0, y, this.width, 2);
+                }
+                this.ctx.globalAlpha = 1;
+            }
+            
+            return;
+        }
+        
+        // NORMAL GAME DRAW
+        this.drawGame();
+    }
+    
+    drawGame() {
         // Apply screen shake
         this.ctx.save();
         this.ctx.translate(this.screenShake.x, this.screenShake.y);
 
-        // Apply color inversion if Nova is active
-        if (this.nova && this.nova.isActive && Math.random() > 0.7) {
-            this.ctx.filter = 'invert(1)';
-        }
+        // Removed full-screen color inversion - too epileptic
 
         // Clear canvas with slight vignette
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(-this.screenShake.x, -this.screenShake.y, this.width, this.height);
 
-        // VHS chromatic aberration (RGB shift)
+        // VHS chromatic aberration (RGB shift) - reduced intensity
         if (this.chromaticAberration > 0.1) {
             this.ctx.save();
             this.ctx.globalCompositeOperation = 'lighter';
-            this.ctx.globalAlpha = 0.3;
-            this.ctx.translate(this.chromaticAberration, 0);
+            this.ctx.globalAlpha = 0.15; // Reduced from 0.3
+            this.ctx.translate(this.chromaticAberration * 0.5, 0); // Reduced shift
             this.drawGameObjects();
-            this.ctx.translate(-this.chromaticAberration * 2, 0);
-            this.ctx.globalAlpha = 0.3;
+            this.ctx.translate(-this.chromaticAberration, 0);
+            this.ctx.globalAlpha = 0.15; // Reduced from 0.3
             this.drawGameObjects();
             this.ctx.restore();
         }
@@ -1894,13 +2204,24 @@ export default class Game {
         }
         this.ctx.globalAlpha = 1;
 
-        // Random glitch lines
+        // Localized glitch lines (only near source)
         if (this.glitchActive) {
-            for (let i = 0; i < 3; i++) {
-                const y = Math.random() * this.height;
+            for (let i = 0; i < 8; i++) {
+                // Generate glitch lines within radius of source
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * this.glitchRadius;
+                const glitchX = this.glitchSourceX + Math.cos(angle) * distance;
+                const glitchY = this.glitchSourceY + Math.sin(angle) * distance;
+                const width = Math.random() * 100 + 50;
                 const height = Math.random() * 20 + 5;
-                this.ctx.fillStyle = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.1)`;
-                this.ctx.fillRect(-this.screenShake.x + Math.random() * this.glitchIntensity, y, this.width, height);
+                
+                this.ctx.fillStyle = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.15)`;
+                this.ctx.fillRect(
+                    glitchX - width / 2 - this.screenShake.x + Math.random() * this.glitchIntensity, 
+                    glitchY - height / 2, 
+                    width, 
+                    height
+                );
             }
         }
 
@@ -2016,86 +2337,170 @@ export default class Game {
         }
 
         if (this.gameOver) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+            // Full screen VHS static overlay
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.98)';
             this.ctx.fillRect(0, 0, this.width, this.height);
+            
+            // VHS noise
+            for (let i = 0; i < 50; i++) {
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.05})`;
+                this.ctx.fillRect(Math.random() * this.width, Math.random() * this.height, 2, 2);
+            }
 
-            // Larger box to fit death messages
-            const boxWidth = 700;
-            const boxHeight = 350;
+            // Larger VHS-style container
+            const boxWidth = 900;
+            const boxHeight = 550;
             const boxX = this.width / 2 - boxWidth / 2;
             const boxY = this.height / 2 - boxHeight / 2;
 
-            // Box background
-            this.ctx.fillStyle = 'rgba(20, 0, 0, 0.9)';
-            this.ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
-            // Red border
+            // VHS-style scanlines background
+            for (let y = boxY; y < boxY + boxHeight; y += 2) {
+                this.ctx.fillStyle = y % 4 === 0 ? 'rgba(0, 0, 0, 0.9)' : 'rgba(10, 0, 0, 0.85)';
+                this.ctx.fillRect(boxX, y, boxWidth, 2);
+            }
+            
+            // Chunky retro border
             this.ctx.strokeStyle = '#ff0000';
-            this.ctx.lineWidth = 4;
+            this.ctx.lineWidth = 6;
             this.ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.strokeStyle = '#660000';
             this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(boxX - 3, boxY - 3, boxWidth + 6, boxHeight + 6);
+            this.ctx.strokeRect(boxX + 8, boxY + 8, boxWidth - 16, boxHeight - 16);
 
-            this.ctx.fillStyle = '#ff0000';
-            this.ctx.font = 'bold 72px Outfit';
+            // VHS glitch line effect
+            const glitchY = boxY + Math.random() * boxHeight;
+            this.ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.3})`;
+            this.ctx.fillRect(boxX, glitchY, boxWidth, 3);
+
+            // Retro GAME OVER text with VHS chromatic aberration
+            this.ctx.font = 'bold 80px Courier New';
             this.ctx.textAlign = 'center';
-            this.ctx.shadowBlur = 25;
-            this.ctx.shadowColor = '#ff0000';
-            this.ctx.fillText('× GAME OVER ×', this.width / 2, boxY + 80);
-            this.ctx.shadowBlur = 0;
-
-            this.ctx.font = 'bold 28px Outfit';
-            this.ctx.fillStyle = '#ffff00';
-            this.ctx.fillText(`LEVEL ${this.level} // SCORE ${this.score}`, this.width / 2, boxY + 130);
-
-            const finalAccuracy = this.getAccuracy();
-            const finalPhrase = this.getAccuracyPhrase(finalAccuracy);
-            this.ctx.font = 'bold 24px Outfit';
+            
+            // Red channel offset
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.fillText('× GAME OVER ×', this.width / 2 - 3, boxY + 90);
+            // Cyan channel offset
             this.ctx.fillStyle = '#00ffff';
-            this.ctx.fillText(`ACCURACY: ${finalAccuracy}% [${finalPhrase}]`, this.width / 2, boxY + 170);
-
-            // Death cause with better visibility
-            this.ctx.font = 'bold 22px Outfit';
-            this.ctx.fillStyle = '#ff6666';
-            this.ctx.shadowBlur = 10;
-            this.ctx.shadowColor = '#000000';
-            this.ctx.fillText(`CAUSE: ${this.deathCause}`, this.width / 2, boxY + 215);
-            this.ctx.shadowBlur = 0;
-
-            // Death message with wrap support
-            this.ctx.font = 'italic 20px Outfit';
+            this.ctx.fillText('× GAME OVER ×', this.width / 2 + 3, boxY + 90);
+            // Main white text
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.shadowBlur = 8;
-            this.ctx.shadowColor = '#000000';
+            this.ctx.fillText('× GAME OVER ×', this.width / 2, boxY + 90);
 
-            // Wrap text if too long
-            const maxWidth = boxWidth - 80;
+            // VHS-style score display
+            this.ctx.font = 'bold 28px Courier New';
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.fillText(`LVL ${this.level} /// SCORE ${this.score}`, this.width / 2, boxY + 145);
+
+            // Retro separator line
+            this.ctx.strokeStyle = '#666666';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(boxX + 50, boxY + 165);
+            this.ctx.lineTo(boxX + boxWidth - 50, boxY + 165);
+            this.ctx.stroke();
+
+            // VHS-style playstyle title
+            const playstyleData = this.getPlaystylePercentage();
+            this.ctx.font = 'bold 24px Courier New';
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.fillText('>> PLAYSTYLE ANALYSIS <<', this.width / 2, boxY + 205);
+            
+            // Blocky retro playstyle bar
+            const barWidth = 600;
+            const barHeight = 40;
+            const barX = this.width / 2 - barWidth / 2;
+            const barY = boxY + 225;
+            
+            // Bar background with scanlines
+            this.ctx.fillStyle = '#000000';
+            this.ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // Attack portion - blocky red with dithering
+            const attackWidth = barWidth * playstyleData.attack / 100;
+            for (let y = 0; y < barHeight; y += 2) {
+                this.ctx.fillStyle = y % 4 === 0 ? '#ff0000' : '#cc0000';
+                this.ctx.fillRect(barX, barY + y, attackWidth, 2);
+            }
+            
+            // Defense portion - blocky blue with dithering
+            const defenseWidth = barWidth * playstyleData.defense / 100;
+            for (let y = 0; y < barHeight; y += 2) {
+                this.ctx.fillStyle = y % 4 === 0 ? '#0066ff' : '#0044cc';
+                this.ctx.fillRect(barX + attackWidth, barY + y, defenseWidth, 2);
+            }
+            
+            // Chunky bar border
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+            
+            // VHS-style labels
+            this.ctx.font = 'bold 22px Courier New';
+            this.ctx.fillStyle = '#ff4444';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`[ATTACK: ${playstyleData.attack}%]`, barX, barY + barHeight + 35);
+            
+            this.ctx.fillStyle = '#4444ff';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`[DEFENCE: ${playstyleData.defense}%]`, barX + barWidth, barY + barHeight + 35);
+            this.ctx.textAlign = 'center';
+
+            // Another separator
+            this.ctx.strokeStyle = '#666666';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(boxX + 50, barY + barHeight + 55);
+            this.ctx.lineTo(boxX + boxWidth - 50, barY + barHeight + 55);
+            this.ctx.stroke();
+
+            // Death cause - VHS style
+            this.ctx.font = 'bold 26px Courier New';
+            this.ctx.fillStyle = '#ff6666';
+            this.ctx.fillText(`[!] ${this.deathCause.toUpperCase()} [!]`, this.width / 2, barY + barHeight + 95);
+
+            // Death message - retro monospace
+            this.ctx.font = '20px Courier New';
+            this.ctx.fillStyle = '#cccccc';
+
+            // Wrap text
+            const maxWidth = boxWidth - 120;
             const words = this.deathMessage.split(' ');
             let line = '';
-            let y = boxY + 255;
+            let y = barY + barHeight + 135;
 
             for (let i = 0; i < words.length; i++) {
                 const testLine = line + words[i] + ' ';
                 const metrics = this.ctx.measureText(testLine);
                 if (metrics.width > maxWidth && i > 0) {
-                    this.ctx.fillText(`"${line.trim()}"`, this.width / 2, y);
+                    this.ctx.fillText(`> ${line.trim()}`, this.width / 2, y);
                     line = words[i] + ' ';
                     y += 28;
                 } else {
                     line = testLine;
                 }
             }
-            this.ctx.fillText(`"${line.trim()}"`, this.width / 2, y);
-            this.ctx.shadowBlur = 0;
+            this.ctx.fillText(`> ${line.trim()}`, this.width / 2, y);
 
-            this.ctx.font = '20px Outfit';
-            this.ctx.fillStyle = '#00ff00';
-            this.ctx.fillText('» Press R to restart «', this.width / 2, boxY + boxHeight - 30);
+            // VHS timestamp effect
+            const timestamp = new Date().toISOString().split('T')[0] + ' ' + new Date().toTimeString().split(' ')[0];
+            this.ctx.font = '14px Courier New';
+            this.ctx.fillStyle = '#666666';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(`REC ${timestamp}`, boxX + boxWidth - 20, boxY + boxHeight - 50);
+
+            // Restart prompt - blinking VHS style
+            const blink = Math.floor(Date.now() / 500) % 2;
+            if (blink) {
+                this.ctx.font = 'bold 24px Courier New';
+                this.ctx.fillStyle = '#00ff00';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('[PRESS R TO RESTART]', this.width / 2, boxY + boxHeight - 35);
+            }
+            
             this.ctx.textAlign = 'left';
         }
     }
-
+    
     animate(timestamp) {
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;

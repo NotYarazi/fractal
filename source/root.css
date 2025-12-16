@@ -49,6 +49,7 @@ body {
 	pointer-events: none;
 	padding: 20px;
 	z-index: 10;
+	display: none; /* Hidden by default until VHS boots */
 }
 
 .hud-top {
@@ -109,6 +110,7 @@ body {
 	box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
 	z-index: 10;
 	white-space: nowrap;
+	display: none; /* Hidden by default until VHS boots */
 }
 
 .key-hint {

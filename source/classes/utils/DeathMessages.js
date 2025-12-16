@@ -4,7 +4,8 @@ export default class DeathMessages {
         
         // Analyze death context
         const enemies = game.enemies.length;
-        const accuracy = game.getAccuracy();
+        const playstyleData = game.getPlaystylePercentage();
+        const playstyle = game.getPlaystyle();
         const level = game.level;
         const health = game.player.health;
         const enemyProjectiles = game.enemyProjectiles.length;
@@ -69,32 +70,27 @@ export default class DeathMessages {
             );
         }
         
-        // Low accuracy deaths
-        if (accuracy < 30) {
+        // Too aggressive playstyle deaths
+        if (playstyle === 'ATTACK' && playstyleData.attack > 70) {
             messages.push(
-                "Can't hit enemies, can't dodge... RIP",
-                "Your aim is why you're reading this",
-                "Maybe try turning on aim assist? Oh wait...",
-                "Stormtrooper-level accuracy detected",
-                "noob vs ai",
-                "You shot everything except the enemies",
-                "shooting yourself in the foot is easier",
-                "The targets were THAT way ↑",
-                "Missing shots AND dodges? Impressive.",
-                "Even the tutorial would've helped at this point",
-                "skill issue"
+                "All offense, no defense = death",
+                "Maybe try dodging next time?",
+                "Rushing in didn't work out, huh?",
+                "Aggression without caution",
+                "You can't shoot if you're dead",
+                "Your offensive was too offensive to survive"
             );
         }
         
-        // High accuracy but still died
-        if (accuracy > 80) {
+        // Too defensive playstyle deaths  
+        if (playstyle === 'DEFENCE' && playstyleData.defense > 70) {
             messages.push(
-                "Good aim, bad survival instincts",
-                "You can shoot but can you MOVE?",
-                "All aim, no brain",
-                "Precision without positioning = death",
-                "Sniper mentality in a bullet hell... bold",
-                "Your accuracy was godlike, your HP was not"
+                "Can't win by hiding forever",
+                "Defense is great but you gotta SHOOT",
+                "Dodging without damage = slow death",
+                "You survived long but accomplished nothing",
+                "All dodge, no damage",
+                "Turtling didn't save you this time"
             );
         }
         
