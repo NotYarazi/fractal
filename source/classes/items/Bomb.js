@@ -7,11 +7,11 @@ export default class Bomb {
     this.height = 16;
 
     // Bouncy physics
-    this.vx = (Math.random() - 0.5) * 8;
+    this.vx = (Math.random() - 0.5) * 4;
     this.vy = 0;
-    this.gravity = 0.6;
-    this.bounciness = 0.7 + Math.random() * 0.15; // 70-85% bounce
-    this.friction = 0.96;
+    this.gravity = 0.4;
+    this.bounciness = 0.5 + Math.random() * 0.1;
+    this.friction = 0.94;
 
     // States: 'bouncing', 'warning', 'exploding'
     this.state = "bouncing";
@@ -28,7 +28,7 @@ export default class Bomb {
 
     // Warning phase
     this.warningTimer = 0;
-    this.warningDuration = 60 + Math.random() * 240; // 1-5 seconds at 60fps
+    this.warningDuration = 60 + Math.random() * 240;
     this.warningRadius = 20;
     this.maxWarningRadius = 80;
 
@@ -126,27 +126,28 @@ export default class Bomb {
         const dx = this.targetX - this.x;
         const distX = Math.abs(dx);
 
-        // Only apply horizontal force if not too close
+        // Apply horizontal force if not too close
         if (distX > 20) {
-          this.vx += Math.sign(dx) * this.moveForce;
-        } else if (
-          distX < 10 &&
-          Math.abs(this.vx) < 2 &&
-          Math.abs(this.vy) < 2
-        ) {
+          this.vx += Math.sign(dx) * this.moveForce * 0.5;
+        }
+
+        // Check if reached target (only check X, Y will settle on ground)
+        if (distX < 40 && Math.abs(this.vx) < 2 && Math.abs(this.vy) < 2) {
           // Reached target, start stuck timer
           this.hasReachedTarget = true;
         }
       }
 
-      // Cap horizontal velocity
-      const maxVx = 8;
+      // Cap velocities to prevent crazy bouncing
+      const maxVx = 6;
+      const maxVy = 12;
       this.vx = Math.max(-maxVx, Math.min(maxVx, this.vx));
+      this.vy = Math.max(-maxVy, Math.min(maxVy, this.vy));
 
       this.x += this.vx;
       this.y += this.vy;
 
-      // Bounce on ground
+      // Bounce on ground - always bounce, never fall through
       if (this.y >= this.groundY - this.height) {
         this.y = this.groundY - this.height;
         this.vy = -Math.abs(this.vy) * this.bounciness;
@@ -154,6 +155,12 @@ export default class Bomb {
         // Squish animation on bounce
         this.squishX = 1.3;
         this.squishY = 0.7;
+
+        // Dampen more when close to target
+        if (this.hasReachedTarget) {
+          this.vy *= 0.5;
+          this.vx *= 0.8;
+        }
       }
 
       // Bounce on walls

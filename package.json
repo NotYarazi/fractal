@@ -1,24 +1,26 @@
 {
   "name": "fractal",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "",
   "keywords": [
     "game",
     "fractal",
+    "boom",
+    "webgame",
+    "sparks",
     "electron",
-    "works",
     "tango",
     "sauce",
     "umaera",
     "stoaticc"
   ],
-  "homepage": "https://github.com/stoaticc/fractal#readme",
+  "homepage": "https://github.com/NotYarazi/fractal#readme",
   "bugs": {
-    "url": "https://github.com/stoaticc/fractal/issues"
+    "url": "https://github.com/NotYarazi/fractal/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stoaticc/fractal.git"
+    "url": "git+https://github.com/NotYarazi/fractal.git"
   },
   "license": "MIT",
   "author": "umaera&tango",
@@ -29,6 +31,8 @@
     "dev": "electron . --dev",
     "build": "electron-builder",
     "build:win": "electron-builder --win --x64",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
     "build:portable": "electron-builder --win portable",
     "dist": "npm run build:win",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -42,11 +46,10 @@
     },
     "files": [
       "src/**/*",
-      "source/**/*",
-      "!source/changelog.md",
-      "!source/README.md"
+      "source/**/*"
     ],
     "win": {
+      "signAndEditExecutable": false,
       "target": [
         {
           "target": "nsis",
@@ -83,13 +86,17 @@
       "target": "dmg",
       "icon": "source/img/fractal.png"
     },
-    "linux": {
-      "target": "AppImage",
-      "icon": "source/img/fractal.png"
-    }
+"linux": {
+  "target": "AppImage",
+  "icon": "source/img/fractal.png",
+  "category": "Game"
+}
   },
   "devDependencies": {
     "electron": "^39.2.7",
-    "electron-builder": "^26.4.0"
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "discord-rpc": "^4.0.1"
   }
 }

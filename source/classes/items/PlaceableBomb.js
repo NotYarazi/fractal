@@ -10,7 +10,7 @@ export default class PlaceableBomb {
 
         // Warning phase - always 2 seconds
         this.warningTimer = 0;
-        this.warningDuration = 120; // 2 seconds at 60fps
+        this.warningDuration = 120; // 2 seconds
         this.warningRadius = 20;
         this.maxWarningRadius = 100;
 

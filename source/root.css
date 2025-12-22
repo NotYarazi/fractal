@@ -24,8 +24,6 @@ body {
   text-align: center;
 }
 
-/* --- **/
-
 .game-wrapper {
   display: flex;
   flex-direction: column;
@@ -50,7 +48,7 @@ body {
   pointer-events: none;
   padding: 20px;
   z-index: 10;
-  display: none; /* Hidden by default until VHS boots */
+  display: none;
 }
 
 .hud-top {
@@ -111,7 +109,7 @@ body {
   box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
   z-index: 10;
   white-space: nowrap;
-  display: none; /* Hidden by default until VHS boots */
+  display: none;
 }
 
 .key-hint {
@@ -119,40 +117,114 @@ body {
   font-weight: bold;
 }
 
-.multishot-panel {
-  background: rgba(255, 0, 255, 0.3);
-  border: 2px solid #ff00ff;
-  padding: 10px;
-  margin-top: 15px;
+.powerup-container {
   width: 300px;
-  margin: 15px auto 0;
-  box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+  margin: 4px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.multishot-title {
-  color: #ff00ff;
-  font-size: 16px;
+.powerup-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-width: 1px;
+  border-style: solid;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.powerup-row.multishot {
+  background: rgba(255, 0, 255, 0.25);
+  border-color: #ff00ff;
+  box-shadow: 0 0 8px rgba(255, 0, 255, 0.4);
+}
+
+.powerup-row.timewarp {
+  background: rgba(0, 255, 255, 0.25);
+  border-color: #00ffff;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+}
+
+.powerup-row.pushpull {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+.powerup-icon {
+  font-size: 12px;
   font-weight: bold;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
   font-family: "Courier New", monospace;
+  flex: 0 0 auto;
+  width: 20px;
+  text-align: center;
 }
 
-.progress-bar {
-  height: 12px;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid #ff00ff;
-  margin-top: 8px;
+.powerup-row.multishot .powerup-icon {
+  color: #ff00ff;
+  text-shadow: 0 0 6px rgba(255, 0, 255, 0.8);
 }
 
-.progress-fill {
+.powerup-row.timewarp .powerup-icon {
+  color: #00ffff;
+  text-shadow: 0 0 6px rgba(0, 255, 255, 0.8);
+}
+
+.powerup-row.pushpull .powerup-icon {
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+}
+
+.powerup-bar {
+  flex: 1 1 auto;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-width: 1px;
+  border-style: solid;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.powerup-row.multishot .powerup-bar {
+  border-color: #ff00ff;
+}
+
+.powerup-row.timewarp .powerup-bar {
+  border-color: #00ffff;
+}
+
+.powerup-row.pushpull .powerup-bar {
+  border-color: #ffffff;
+}
+
+.powerup-bar-fill {
   height: 100%;
-  background: #ff00ff;
   transition: width 0.1s;
-  box-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-/* Unified Inventory Bar */
+.powerup-row.multishot .powerup-bar-fill {
+  background: #ff00ff;
+  box-shadow: 0 0 4px rgba(255, 0, 255, 0.6);
+}
+
+.powerup-row.timewarp .powerup-bar-fill {
+  background: #00ffff;
+  box-shadow: 0 0 4px rgba(0, 255, 255, 0.6);
+}
+
+.powerup-row.pushpull .powerup-bar-fill {
+  background: #ffffff;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+/* Inventory Bar */
 .inventory-bar {
   position: absolute;
   bottom: 20px;
@@ -181,7 +253,7 @@ body {
 }
 
 .inv-slot.has-item {
-  border-color: #00ff00;
+  border-color: #333;
 }
 
 .inv-slot.has-item.selected {

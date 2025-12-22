@@ -1,12 +1,19 @@
+import { CONFIG } from "../config/GameConfig.js";
+
 export default class Player {
-  constructor(x, y, width = 40, height = 40) {
+  constructor(
+    x,
+    y,
+    width = CONFIG.PLAYER.WIDTH,
+    height = CONFIG.PLAYER.HEIGHT
+  ) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
-    this.speed = 5;
-    this.health = 100;
-    this.color = "#00ff00";
+    this.speed = CONFIG.PLAYER.SPEED;
+    this.health = CONFIG.PLAYER.MAX_HEALTH;
+    this.color = CONFIG.PLAYER.COLOR;
 
     // Unified inventory system: 3 slots, each can hold stacks of items
     // Each slot: { type: 'bomb'|'crystal'|'star'|null, count: number }
@@ -15,7 +22,20 @@ export default class Player {
       { type: null, count: 0 },
       { type: null, count: 0 },
     ];
-    this.maxStackSize = 8;
+    this.maxStackSize = CONFIG.PLAYER.MAX_STACK_SIZE;
+
+    // DASH SYSTEM (values from CONFIG)
+    this.dashSpeed = CONFIG.PLAYER.DASH.SPEED;
+    this.dashDuration = CONFIG.PLAYER.DASH.DURATION;
+    this.dashCooldown = CONFIG.PLAYER.DASH.COOLDOWN;
+    this.dashTimer = 0; // Current dash progress
+    this.dashCooldownTimer = 0; // Cooldown tracker
+    this.isDashing = false;
+    this.dashDirection = { x: 0, y: 0 };
+    this.isInvincible = false;
+    this.invincibilityDuration = CONFIG.PLAYER.DASH.INVINCIBILITY_DURATION;
+    this.invincibilityTimer = 0;
+    this.dashTrailPositions = []; // For visual trail effect
 
     // Load sprite
     this.sprite = new Image();
@@ -26,35 +46,81 @@ export default class Player {
     };
   }
 
+  // Trigger a dash in a direction
+  dash(dirX, dirY) {
+    if (this.dashCooldownTimer > 0 || this.isDashing) return false;
+
+    // Normalize direction
+    const mag = Math.sqrt(dirX * dirX + dirY * dirY);
+    if (mag === 0) return false;
+
+    this.dashDirection.x = dirX / mag;
+    this.dashDirection.y = dirY / mag;
+    this.isDashing = true;
+    this.dashTimer = this.dashDuration;
+    this.dashCooldownTimer = this.dashCooldown;
+    this.isInvincible = true;
+    this.invincibilityTimer = this.invincibilityDuration;
+    this.dashTrailPositions = [];
+
+    return true;
+  }
+
   update(input, canvasWidth, canvasHeight) {
-    // Movement
-    if (
-      input.keys.has("ArrowLeft") ||
-      input.keys.has("a") ||
-      input.keys.has("A")
-    ) {
-      this.x -= this.speed;
+    // Update cooldowns
+    if (this.dashCooldownTimer > 0) this.dashCooldownTimer--;
+    if (this.invincibilityTimer > 0) {
+      this.invincibilityTimer--;
+      if (this.invincibilityTimer <= 0) this.isInvincible = false;
     }
-    if (
-      input.keys.has("ArrowRight") ||
-      input.keys.has("d") ||
-      input.keys.has("D")
-    ) {
-      this.x += this.speed;
-    }
-    if (
-      input.keys.has("ArrowUp") ||
-      input.keys.has("w") ||
-      input.keys.has("W")
-    ) {
-      this.y -= this.speed;
-    }
-    if (
-      input.keys.has("ArrowDown") ||
-      input.keys.has("s") ||
-      input.keys.has("S")
-    ) {
-      this.y += this.speed;
+
+    // Handle dashing
+    if (this.isDashing) {
+      // Store position for trail
+      this.dashTrailPositions.push({ x: this.x, y: this.y });
+      if (this.dashTrailPositions.length > 5) {
+        this.dashTrailPositions.shift();
+      }
+
+      // Move in dash direction
+      this.x += this.dashDirection.x * this.dashSpeed;
+      this.y += this.dashDirection.y * this.dashSpeed;
+
+      this.dashTimer--;
+      if (this.dashTimer <= 0) {
+        this.isDashing = false;
+        this.dashTrailPositions = [];
+      }
+    } else {
+      // Normal movement
+      if (
+        input.keys.has("ArrowLeft") ||
+        input.keys.has("a") ||
+        input.keys.has("A")
+      ) {
+        this.x -= this.speed;
+      }
+      if (
+        input.keys.has("ArrowRight") ||
+        input.keys.has("d") ||
+        input.keys.has("D")
+      ) {
+        this.x += this.speed;
+      }
+      if (
+        input.keys.has("ArrowUp") ||
+        input.keys.has("w") ||
+        input.keys.has("W")
+      ) {
+        this.y -= this.speed;
+      }
+      if (
+        input.keys.has("ArrowDown") ||
+        input.keys.has("s") ||
+        input.keys.has("S")
+      ) {
+        this.y += this.speed;
+      }
     }
 
     // Keep player within bounds
@@ -63,19 +129,49 @@ export default class Player {
   }
 
   draw(ctx) {
-    if (this.spriteLoaded) {
+    // Draw dash trail
+    if (this.dashTrailPositions.length > 0) {
+      this.dashTrailPositions.forEach((pos, i) => {
+        const alpha = ((i + 1) / (this.dashTrailPositions.length + 1)) * 0.5;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.isInvincible ? "#00ffff" : this.color;
+        ctx.fillRect(pos.x, pos.y, this.width, this.height);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Flash when invincible
+    if (this.isInvincible && Math.floor(Date.now() / 50) % 2 === 0) {
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = "#00ffff";
+    } else if (this.spriteLoaded) {
       ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
     } else {
-      // Fallback to colored rectangle
       ctx.fillStyle = this.color;
-      ctx.fillRect(this.x, this.y, this.width, this.height);
     }
+
+    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.shadowBlur = 0;
 
     // Draw health bar
     ctx.fillStyle = "red";
     ctx.fillRect(this.x, this.y - 10, this.width, 5);
     ctx.fillStyle = "green";
     ctx.fillRect(this.x, this.y - 10, this.width * (this.health / 100), 5);
+
+    // Draw dash cooldown indicator (cyan bar above health)
+    if (this.dashCooldownTimer > 0) {
+      const cooldownProgress = 1 - this.dashCooldownTimer / this.dashCooldown;
+      ctx.fillStyle = "#00ffff";
+      ctx.globalAlpha = 0.5;
+      ctx.fillRect(this.x, this.y - 15, this.width * cooldownProgress, 2);
+      ctx.globalAlpha = 1;
+    } else {
+      // Ready to dash - bright cyan bar
+      ctx.fillStyle = "#00ffff";
+      ctx.fillRect(this.x, this.y - 15, this.width, 2);
+    }
 
     // Add glow effect
     if (this.spriteLoaded) {

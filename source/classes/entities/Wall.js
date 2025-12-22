@@ -6,7 +6,7 @@ export default class Wall {
         this.height = 60;
         this.emerging = true;
         this.emergingTimer = 0;
-        this.emergingDuration = 30; // 0.5 seconds to emerge
+        this.emergingDuration = 60; // 1 second to emerge
         this.currentHeight = 0;
         this.shakeIntensity = 5;
         this.health = 100;
@@ -16,7 +16,7 @@ export default class Wall {
         this.fragments = [];
         this.exploding = false;
         this.explodingTimer = 0;
-        this.explodingDuration = 30;
+        this.explodingDuration = 60;
     }
 
     update() {

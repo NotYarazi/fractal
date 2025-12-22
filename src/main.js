@@ -1,6 +1,10 @@
-// electron.js code
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const fs = require("fs");
+const DiscordRPC = require("./rpc.js");
+
+// Discord Rich Presence
+let discordRPC = null;
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -10,16 +14,16 @@ function createWindow() {
     minHeight: 600,
     frame: true,
     transparent: false,
-    fullscreen: false, // Start windowed with frame
+    fullscreen: false,
     fullscreenable: true,
     backgroundColor: "#000000",
     resizable: true,
     autoHideMenuBar: true,
     webPreferences: {
-      //preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      sandbox: false, // Need this for preload to work with IPC
       devTools: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
@@ -31,11 +35,9 @@ function createWindow() {
   // Load the game
   mainWindow.loadFile(path.join(__dirname, "../source/index.html"));
 
-  // Show window with fade-in effect when ready
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
     mainWindow.focus();
-    // Start maximized for best gaming experience
     mainWindow.maximize();
     mainWindow.setFullScreen(true);
   });
@@ -69,8 +71,47 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
+
+  // Initialize Discord Rich Presence
+  discordRPC = new DiscordRPC();
+  await discordRPC.connect();
+
+  // Handle RPC updates from renderer
+  ipcMain.on("rpc-update", (event, state) => {
+    if (discordRPC) {
+      discordRPC.updateState(state);
+    }
+  });
+
+  // Handle screenshot saving
+  ipcMain.handle("save-screenshot", async (event, dataUrl) => {
+    try {
+      // Get user's documents folder
+      const documentsPath = app.getPath("documents");
+      const screenshotDir = path.join(documentsPath, "FRACTAL", "screenshots");
+
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(screenshotDir)) {
+        fs.mkdirSync(screenshotDir, { recursive: true });
+      }
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const filename = `fractal_${timestamp}.png`;
+      const filepath = path.join(screenshotDir, filename);
+
+      // Convert data URL to buffer and save
+      const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+      fs.writeFileSync(filepath, base64Data, "base64");
+
+      return { success: true, path: filepath };
+    } catch (error) {
+      console.error("Screenshot save error:", error);
+      return { success: false, error: error.message };
+    }
+  });
 
   app.on("activate", function () {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -79,7 +120,12 @@ app.whenReady().then(() => {
   });
 });
 
-app.on("window-all-closed", function () {
+app.on("window-all-closed", async function () {
+  // Cleanup Discord RPC
+  if (discordRPC) {
+    await discordRPC.disconnect();
+  }
+
   if (process.platform !== "darwin") {
     app.quit();
   }

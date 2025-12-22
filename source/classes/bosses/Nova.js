@@ -26,7 +26,7 @@ export default class Nova {
     this.summonTimer = 0;
     this.summonInterval = 300; // Summon enemies every 5 seconds
     this.disappearTimer = 0;
-    this.disappearInterval = 600; // Disappear every 10 seconds
+    this.disappearInterval = 1800; // Disappear every 30 seconds
 
     // Teleport animation
     this.alpha = 1;
@@ -84,9 +84,12 @@ export default class Nova {
         // Fade out
         this.alpha -= 0.05;
         if (this.alpha <= 0) {
-          // Teleport to new position
+          // Teleport to new position - either near (250-400px) or far (500-700px)
+          const isFarTeleport = Math.random() < 0.5;
           const angle = Math.random() * Math.PI * 2;
-          const distance = 150 + Math.random() * 150;
+          const distance = isFarTeleport
+            ? 500 + Math.random() * 200 // Far: 500-700px
+            : 250 + Math.random() * 150; // Near: 250-400px
           this.x = Math.max(
             50,
             Math.min(width - 50, playerX + Math.cos(angle) * distance)

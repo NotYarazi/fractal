@@ -15,19 +15,20 @@ Brutal top-down arena shooter built with raw JavaScript & Canvas API. No framewo
 ### MOVEMENT & COMBAT
 
 - **WASD / ARROWS** » move your existence
+- **DOUBLE-TAP WASD** » DASH with invincibility frames!
 - **MOUSE CLICK** » shoot projectiles (hold to auto-fire)
 - **RIGHT CLICK** » use inventory items (bombs/crystals/stars)
 - **F / F11** » toggle fullscreen
 - **P / ESC** » pause (coward break)
 - **R** » restart after inevitable death
 
-### INVENTORY SELECTION
+### INVENTORY SELECTION + EXTRAS
 
 - **1-3** » select inventory slot (bombs, crystals, or stars)
-- **8** » force-buy star (-80 XP, instant spawn)
 - **9** » test spawn Mage boss
 - **7** » test spawn Nova boss
 - **K** » toggle Nova pause (debug)
+- **F2** » screenshot -> saves to `documents/FRACTAL/scrennshots`
 
 ## !? ENEMY TYPES
 
@@ -55,7 +56,7 @@ Rectangle-based terror. All unique. All deadly.
 
 - **800 HP** ultra-hard challenge
 - **Lightning lasers** that vaporize everything
-- **Player teleportation** - she moves YOU
+- **Player teleportation** - she moves YOU with a little hand!!
 - **Enemy summoning** mid-fight
 - **Color inversion** glitch effect
 - **UI scrambling** with random symbols
@@ -100,7 +101,9 @@ Rectangle-based terror. All unique. All deadly.
 **Magenta squares** = triple-shot (3 projectiles, 5 seconds)  
 **Green orbs** = XP (5/10 points, collect 80 for star)  
 **Cyan crystals** = shock wave from Mage  
-**Yellow stars** = bouncing killer projectile
+**Yellow stars** = bouncing killer projectile  
+**Cyan hourglass** = TIME WARP (slows everything except you for 8 seconds!)
+**White circle** = pushpull - pushes enemies, pulls xp orbs, makes you invencible for 10s
 
 ## @ GAME FEATURES
 
@@ -120,15 +123,6 @@ Rectangle-based terror. All unique. All deadly.
 ```
 
 ## >> SPECIAL MECHANICS
-
-### Accuracy System
-
-- Tracks every shot fired
-- Counts hits on ANY enemy (not just kills)
-- Displayed with snarky phrases:
-  - 95%+ = "GODLIKE"
-  - 69% = "NICE"
-  - <20% = "pathetic"
 
 ### Death Messages
 
@@ -185,7 +179,8 @@ source/
 
 **Levels 1-7:** Enemy waves, collect XP, buy stars  
 **Level 8+:** Mage boss spawns (every 6 levels)  
-**Anytime:** Spawn Nova with key 7 (chaos mode)  
+**Each 10 levels** Nova spawns (if killed)
+**Each 2 levels** Nova comes back (if not killed)
 **Death:** Read hilarious message, press R, try not to cry
 
 ## !! TIPS

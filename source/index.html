@@ -34,10 +34,36 @@
         <div class="health-bar-container">
           <div class="health-bar-fill" id="healthBar" style="width: 100%"></div>
         </div>
-        <div id="multishotPanel" class="multishot-panel" style="display: none">
-          <div class="multishot-title">×3 MULTI-SHOT</div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="multishotProgress"></div>
+        <div id="powerupContainer" class="powerup-container">
+          <div
+            id="multishotPanel"
+            class="powerup-row multishot"
+            style="display: none"
+          >
+            <span class="powerup-icon" id="multishotIcon">×3</span>
+            <div class="powerup-bar">
+              <div class="powerup-bar-fill" id="multishotProgress"></div>
+            </div>
+          </div>
+          <div
+            id="timewarpPanel"
+            class="powerup-row timewarp"
+            style="display: none"
+          >
+            <span class="powerup-icon">⏱</span>
+            <div class="powerup-bar">
+              <div class="powerup-bar-fill" id="timewarpProgress"></div>
+            </div>
+          </div>
+          <div
+            id="pushpullPanel"
+            class="powerup-row pushpull"
+            style="display: none"
+          >
+            <span class="powerup-icon">⟷</span>
+            <div class="powerup-bar">
+              <div class="powerup-bar-fill" id="pushpullProgress"></div>
+            </div>
           </div>
         </div>
       </div>

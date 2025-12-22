@@ -8,10 +8,38 @@ export default class InputHandler {
     this.firstInputDetected = false;
     this.firstInputTime = 0;
 
+    // DOUBLE-TAP DASH SYSTEM
+    this.doubleTapWindow = 250; // ms window for double-tap
+    this.lastKeyTime = {}; // Track last press time for each key
+    this.lastKeyState = {}; // Track if key was released
+    this.dashRequest = null; // { direction: {x, y} } when double-tap detected
+
     window.addEventListener("keydown", (e) => {
       if (!this.firstInputDetected) {
         this.firstInputDetected = true;
         this.firstInputTime = Date.now();
+      }
+
+      const key = e.key.toLowerCase();
+
+      // Check for double-tap on movement keys
+      if (["w", "a", "s", "d"].includes(key)) {
+        const now = Date.now();
+
+        // Only trigger if key was released and pressed again quickly
+        if (
+          this.lastKeyState[key] === "released" &&
+          this.lastKeyTime[key] &&
+          now - this.lastKeyTime[key] < this.doubleTapWindow
+        ) {
+          // Double-tap detected!
+          this.dashRequest = this.getDashDirection(key);
+          this.lastKeyTime[key] = 0; // Reset to prevent triple-tap
+        } else if (!this.keys.has(key) && !this.keys.has(key.toUpperCase())) {
+          // First press - record time
+          this.lastKeyTime[key] = now;
+        }
+        this.lastKeyState[key] = "pressed";
       }
 
       this.keys.add(e.key);
@@ -29,7 +57,35 @@ export default class InputHandler {
 
     window.addEventListener("keyup", (e) => {
       this.keys.delete(e.key);
+
+      const key = e.key.toLowerCase();
+      if (["w", "a", "s", "d"].includes(key)) {
+        this.lastKeyState[key] = "released";
+        // Update time on release for accurate double-tap detection
+        this.lastKeyTime[key] = Date.now();
+      }
     });
+  }
+
+  getDashDirection(key) {
+    switch (key) {
+      case "w":
+        return { x: 0, y: -1 };
+      case "s":
+        return { x: 0, y: 1 };
+      case "a":
+        return { x: -1, y: 0 };
+      case "d":
+        return { x: 1, y: 0 };
+      default:
+        return null;
+    }
+  }
+
+  consumeDashRequest() {
+    const dash = this.dashRequest;
+    this.dashRequest = null;
+    return dash;
   }
 
   setupMouseListeners(canvas, onShoot, onRightClick) {

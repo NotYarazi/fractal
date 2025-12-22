@@ -2,12 +2,12 @@ export default class Projectile {
     constructor(x, y, targetX, targetY, speed = 7) {
         this.x = x;
         this.y = y;
-        this.width = 5;
-        this.height = 5;
+        this.width = 6;
+        this.height = 6;
         this.speed = speed;
         this.damage = 20;
         this.color = '#ffff00';
-        
+
         // Calculate direction
         const dx = targetX - x;
         const dy = targetY - y;

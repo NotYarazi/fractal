@@ -11,7 +11,7 @@ export default class StarOrb {
         this.pulsePhase = 0;
         
         // Lifetime management
-        this.maxLifetime = 1500; // 25 seconds at 60fps
+        this.maxLifetime = 1500; // 25 seconds
         this.lifetime = 0;
         
         // Sparkle effects

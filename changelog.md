@@ -1,4 +1,24 @@
-# 0.0.7 - More speed, More Mechanics to more fates! (22rd december)
+# 0.8.0 - Code Revolution, Enemies confusion (22rd december)
+- DISCORD INTEGRATION ADDED!! (it's supa cool)
+- Files organized (no more +3000 line game.js ahh)
+- EASY CONFIG FILE!!!!! omgomg, all in: `classes/config/GameConfig.js`
+- DASH MECHANIC!!!! double-tap any wasd key and dash (become immortal while dashing!)
+- Time warp! - everything else moves 30% speed but you.
+- UI CHANGE! The powerup's container is now more compact :3
+- Now multishot powerup goes all the way to x7 bullets (random. fate.)
+- Nova spawns every 10 levels - if killed.
+- BAM! "pushpull" powerup is here. Push enemies, pull xp orbs while immune to any attack - for 10s! enjoy.
+- F2 to screenshot. (saved to `documents/FRACTAL/screenshots`)
+- All orbs are attracted to you when you pick up life-powerup.
+- Removed `force_buy_stars` key.
+- MORE DEATH MESSAGES - more cruel than ever.
+- NOVA grabs u :3 instead of just.. teleporting whatever
+- NOVA'S laser indicator is soo much visible, impossible to miss.
+- COMBO SYSTEM IS HERE! Violently apears, violently desapears.
+- Bullets are slightly more larger
+- NOVA lasts longer in the fight before desapearing (30s)
+
+# 0.7.0 - More speed, More Mechanics to more fates! (22rd december)
 - Stars are HUGE!
 - Max particles - from 500 to 120
 - Now when leveled up, some enemies explode and some stay (it's called fate - 50%)
@@ -17,7 +37,7 @@
 - CURSORS!!!! funny. They shape.
 - Now bossbars scale (width) depending on the value.
 
-# 0.0.6 - Um... technicly.. (16th december)
+# 0.6.0 - Um... technicly.. (16th december)
 - Optimized particle limit
 - Color inversion reduced
 - Nova lazer: from line to BEAM
@@ -26,7 +46,8 @@
 - accuracy -> playerStyleTrack (defence/attack)
 - BETTER GAME OVER SCREEN!
 
-# 0.0.5 - BOOM AND PLUH! (15th december)
+# 0.5.0 - BOOM AND PLUH! (15th december)
+- Skiped a few versions.
 - full screen
 - vhs effects
 - new type of enemy: medium (smart + dumb)
@@ -39,7 +60,7 @@
 
 Controls: buy star (8), spawn mage (9), spawn nova (7), pause nova (k)
 
-# 0.0.2 - YEAHHHHH (15th december)
+# 0.2.0 - YEAHHHHH (15th december)
 ## Level System
 - Start at Level 1, progress by killing enemies
 - Each level requires more kills (10, then 15, 20, etc.)
@@ -73,3 +94,5 @@ Controls: buy star (8), spawn mage (9), spawn nova (7), pause nova (k)
 - Level number
 - Kill progress (X/Y enemies)
 - Final level shown on game over
+
+# 0.1.0 - Initial Release (15th december)
