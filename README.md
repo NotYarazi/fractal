@@ -15,8 +15,9 @@ Brutal top-down arena shooter built with raw JavaScript & Canvas API. No framewo
 ### MOVEMENT & COMBAT
 
 -   **WASD / ARROWS** » move your existence
--   **MOUSE CLICK** » shoot projectiles
+-   **MOUSE CLICK** » shoot projectiles (hold to auto-fire)
 -   **RIGHT CLICK** » use inventory items (bombs/crystals/stars)
+-   **F / F11** » toggle fullscreen
 -   **P / ESC** » pause (coward break)
 -   **R** » restart after inevitable death
 
@@ -43,11 +44,12 @@ Rectangle-based terror. All unique. All deadly.
 
 -   **800 HP** with invulnerability shield
 -   **Teleportation** across arena
--   **Wall summoning** to trap you
+-   **Wall summoning** (2-4 walls per cast, max 12 on screen)
 -   **Push/pull forces** yanking you around
 -   **Purple projectile spam**
 -   Spawns at **level 8**, then **every 6 levels**
 -   Drops **Shock Crystal** on defeat
+-   **Stars deal 150 damage** (bypass shield)
 
 ### NOVA BOSS (Chaos Incarnate)
 
@@ -58,18 +60,20 @@ Rectangle-based terror. All unique. All deadly.
 -   **Color inversion** glitch effect
 -   **UI scrambling** with random symbols
 -   **Glitch areas** distorting reality
--   **Random disappear/reappear** with health saved
+-   **Disappear/reappear** (comes back 2 levels later with saved health)
+-   **Stars break her shield** and deal 150 damage
 -   **Key 7** to spawn, **K** to pause
 
-## & INVENTORY SYSTEM (3 SLOTS MAX)
+## & INVENTORY SYSTEM (3 SLOTS, STACKABLE)
 
 ### BOMBS
 
 -   Dropped by dumb enemies (10% chance)
 -   Dropped by medium/smart enemies (30% chance)
+-   **Stack up to 8** per slot
 -   **Right-click** to place (3 max at once)
 -   Explode after 2 seconds
--   Create fire patches
+-   **Fire bombs** create long-lasting fire patches (~15 seconds)
 -   **Destroy walls** (only bombs can!)
 
 ### SHOCK CRYSTALS
@@ -84,7 +88,8 @@ Rectangle-based terror. All unique. All deadly.
 -   **Purchase from Star Orbs** (80 XP cost)
 -   **Right-click** to throw bouncing projectile
 -   Bounces off screen borders
--   **Kills everything** it touches
+-   **Kills enemies instantly**
+-   **Damages bosses** (150 HP, breaks Nova's shield)
 -   Lasts 6 seconds (shrinks & fades)
 -   Rotates & leaves trail particles
 -   **Force-buy with key 8** (spawns orb instantly)
@@ -103,14 +108,15 @@ Rectangle-based terror. All unique. All deadly.
 » VHS glitch effects & chromatic aberration
 » Screen shake on every kill
 » Dynamic lighting system with shadows
-» Particle explosions (50-150 per event)
+» Particle explosions with performance optimization
 » Level transition animations
 » Death animation that shows your shame
 » Accuracy tracking (hits vs shots fired)
 » Progressive difficulty scaling
 » Boss-specific mechanics
-» Inventory priority system
-» Reality-warping Nova effects
+» Dynamic cursor (changes per item type)
+» Boss health bars scale with HP
+» Auto-shoot when holding click
 ```
 
 ## >> SPECIAL MECHANICS
@@ -153,14 +159,14 @@ source/
 ├── index.html          (Entry point)
 ├── root.css            (VHS-style UI)
 └── classes/
-    ├── Game.js         (2096 lines - main orchestrator)
+    ├── Game.js         (3000+ lines - main orchestrator)
     ├── index.js        (Initialization)
     ├── bosses/         (Mage, Nova)
     ├── entities/       (Player, Enemy, Wall)
     ├── projectiles/    (Player, Enemy, NovaLaser)
     ├── items/          (7 types - bombs, stars, crystals, XP)
     ├── effects/        (Particles, ScreenShake, Lights, Fire)
-    ├── systems/        (InputHandler)
+    ├── systems/        (InputHandler, Cursor)
     └── utils/          (DeathMessages - 100+ roasts)
 ```
 
@@ -186,11 +192,11 @@ source/
 
 -   Dodge > aim (especially at low accuracy)
 -   Save shock crystals for boss fights
--   Stars are OP but cost 80 XP
+-   Stars break Nova's shield - use them wisely
 -   Bombs destroy walls (projectiles don't)
+-   Hold click for auto-fire
 -   Nova inverts colors randomly (it's intentional)
 -   "Skill issue" is a diagnosis, not an insult
--   The rectangles ARE trying to help you
 
 ---
 

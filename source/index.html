@@ -1,70 +1,68 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<title>FRACTAL</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="shortcut icon" href="./img/fractal.png" type="image/png" />
-		<link rel="stylesheet" href="root.css" />
-	</head>
-	<body>
-		<div class="game-wrapper">
-			<canvas id="gameCanvas"></canvas>
-			<!-- VHS Boot Logo -->
-			<img id="vhsLogo" src="./img/fractal.png" alt="FRACTAL" style="display: none; position: absolute; max-width: 400px; max-height: 400px; z-index: 100;" />
-			<div class="hud-overlay">
-				<div class="hud-top">
-					<div class="hud-item" id="levelDisplay">>> LVL 1</div>
-					<div class="hud-item" id="scoreDisplay">SCORE: 0</div>
-					<div class="hud-item" id="killsDisplay">KILLS: 0/16</div>
-					<div class="hud-item" id="accuracyDisplay">ACC: 0%</div>
-				</div>
-				<div class="health-bar-container">
-					<div
-						class="health-bar-fill"
-						id="healthBar"
-						style="width: 100%"
-					></div>
-				</div>
-				<div
-					id="multishotPanel"
-					class="multishot-panel"
-					style="display: none"
-				>
-					<div class="multishot-title">×3 MULTI-SHOT</div>
-					<div class="progress-bar">
-						<div class="progress-fill" id="multishotProgress"></div>
-					</div>
-				</div>
-			</div>
-			<div class="controls-ascii">
-				<span class="key-hint">[W][A][S][D]</span> move |
-				<span class="key-hint">[CLICK]</span> shoot |
-				<span class="key-hint">[P]/[ESC]</span> pause |
-				<span class="key-hint">[R]</span> reset
-			</div>
-			<div id="bombSlots" class="bomb-slots" style="display: none">
-				<div class="bomb-slot-label">BOMBS:</div>
-				<div id="bombSlot0" class="bomb-slot"></div>
-				<div id="bombSlot1" class="bomb-slot"></div>
-				<div id="bombSlot2" class="bomb-slot"></div>
-				<div class="bomb-slot-hint">[RIGHT CLICK] to place</div>
-			</div>
-			<div id="crystalSlots" class="crystal-slots" style="display: none">
-				<div class="crystal-slot-label">SHOCK CRYSTALS:</div>
-				<div id="crystalCount" class="crystal-count">0</div>
-				<div class="crystal-slot-hint">[RIGHT CLICK] to use</div>
-			</div>
-			<div id="starSlots" class="star-slots" style="display: none">
-				<div class="star-slot-label">STARS:</div>
-				<div id="starCount" class="star-count">0</div>
-				<div class="star-slot-hint">
-					[RIGHT CLICK] to throw | [8] to buy (-80 XP)
-				</div>
-			</div>
-		</div>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>FRACTAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" href="./img/fractal.png" type="image/png" />
+    <link rel="stylesheet" href="root.css" />
+  </head>
+  <body>
+    <div class="game-wrapper">
+      <canvas id="gameCanvas"></canvas>
+      <!-- VHS Boot Logo -->
+      <img
+        id="vhsLogo"
+        src="./img/fractal.png"
+        alt="FRACTAL"
+        style="
+          display: none;
+          position: absolute;
+          max-width: 400px;
+          max-height: 400px;
+          z-index: 100;
+        "
+      />
+      <div class="hud-overlay">
+        <div class="hud-top">
+          <div class="hud-item" id="levelDisplay">>> LVL 1</div>
+          <div class="hud-item" id="scoreDisplay">SCORE: 0</div>
+          <div class="hud-item" id="killsDisplay">KILLS: 0/16</div>
+          <div class="hud-item" id="accuracyDisplay">ACC: 0%</div>
+        </div>
+        <div class="health-bar-container">
+          <div class="health-bar-fill" id="healthBar" style="width: 100%"></div>
+        </div>
+        <div id="multishotPanel" class="multishot-panel" style="display: none">
+          <div class="multishot-title">×3 MULTI-SHOT</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="multishotProgress"></div>
+          </div>
+        </div>
+      </div>
+      <div class="controls-ascii">
+        <span class="key-hint">[W][A][S][D]</span> move |
+        <span class="key-hint">[CLICK]</span> shoot |
+        <span class="key-hint">[P]/[ESC]</span> pause |
+        <span class="key-hint">[R]</span> reset
+      </div>
+      <div id="inventoryBar" class="inventory-bar" style="display: none">
+        <div id="invSlot0" class="inv-slot selected" data-slot="0">
+          <span class="inv-icon"></span>
+          <span class="inv-count"></span>
+        </div>
+        <div id="invSlot1" class="inv-slot" data-slot="1">
+          <span class="inv-icon"></span>
+          <span class="inv-count"></span>
+        </div>
+        <div id="invSlot2" class="inv-slot" data-slot="2">
+          <span class="inv-icon"></span>
+          <span class="inv-count"></span>
+        </div>
+      </div>
+    </div>
 
-		<script type="module" src="./classes/index.js"></script>
-	</body>
+    <script type="module" src="./classes/index.js"></script>
+  </body>
 </html>

@@ -44,13 +44,19 @@ export default class DeathMessages {
         if (enemies > 15) {
             messages.push(
                 "Bro got absolutely SWARMED",
-                "Death by enemy mosh pit",
+                "It's called fate",
+                "They came in numbers you couldn't handle",
+                "Overwelmed by what? geometry? u suck!",
+                "Die, over and over.",
                 "They formed a line just to delete you",
                 "Enemies called a meeting... you were the topic",
                 "Outnumbered, outgunned, out-skilled",
                 "The enemy union voted you out",
                 "Ganged up on like it's a 1v30",
                 "They smelled fear and it smelled like you",
+                "brain-cell issue",
+                "is this being human? it sucks!",
+                "respawned into a nightmare",
                 "skill issue"
             );
         }
@@ -59,14 +65,19 @@ export default class DeathMessages {
         if (enemyProjectiles > 10) {
             messages.push(
                 "Skill issue",
+                "bullets 2 the face",
+                "bullets got you good",
+                "pew pew pew... you dead",
+                "smoking death",
+                "dodging tutorial: FAILED",
                 "Projectiles said 'this you?' and it was",
                 "Turned into swiss cheese by bullets",
-                "Bullet hell? More like bullet L",
-                "Those red circles weren't friendly suggestions",
-                "Your hitbox was simply too large (cope)",
-                "Projectile dodging tutorial: FAILED",
-                "Imagine getting hit by slow-moving circles",
-                "skill issue"
+                "Bullet hell?",
+                "Those red squares weren't friendly suggestions",
+                "Your hitbox was simply too large (HAHA!)",
+                "Imagine getting hit by slow-moving squares",
+                "skill issue",
+                "too bad, so sad"
             );
         }
         
@@ -209,7 +220,10 @@ export default class DeathMessages {
                 "Teleported into danger",
                 "Reality malfunction",
                 "Nova collision",
-                "Cosmic chaos"
+                "Cosmic chaos",
+                "Inverted colors",
+                "Pushed by nova",
+                "Pulled by nova",
             ];
             return novaCauses[Math.floor(Math.random() * novaCauses.length)];
         }
@@ -220,7 +234,12 @@ export default class DeathMessages {
                 "Wall collision",
                 "Force push/pull",
                 "Mage contact",
-                "Purple magic"
+                "Purple magic",
+                "Walled bruh",
+                "Teleported into harm",
+                "Mage manipulation",
+                "Spatial distortion",
+                "Mage spell",
             ];
             return mageCauses[Math.floor(Math.random() * mageCauses.length)];
         }
@@ -235,10 +254,21 @@ export default class DeathMessages {
         
         const genericCauses = [
             "Enemy contact",
-            "Red circle impact",
+            "Red square impact",
             "Poor positioning",
             "Bad.",
-            "Lack of skill"
+            "Lack of skill",
+            "Getting overwhelmed",
+            "Overconfidence",
+            "Lacked attention",
+            "Misjudged distance",
+            "Failed dodge",
+            "Wrong playstyle",
+            "Underestimated threat",
+            "Not Enough Knoledge",
+            "Geometry interaction",
+            "Unlucky",
+            "Fatal mistake",
         ];
         
         return genericCauses[Math.floor(Math.random() * genericCauses.length)];

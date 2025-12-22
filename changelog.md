@@ -1,6 +1,25 @@
+# 0.0.7 - More speed, More Mechanics to more fates! (22rd december)
+- Stars are HUGE!
+- Max particles - from 500 to 120
+- Now when leveled up, some enemies explode and some stay (it's called fate - 50%)
+- More death messages!
+- Auto shoot is here! Just keep your finger pressing the mouse button.
+- Nerfed the explosion particles count to prevent lag.
+- The particles queue instead of spawning all at once.
+- Inventory System Remade! 3 slots for 3 items, stacks up to 9 each, use what you selected!
+- Max walls on screen: 12 (new)
+- Walls check for other walls before spawning, so it doesnt stack walls inside walls, that is a visual skill issue sign.
+- Click "F" to switch fullscreen -> windowed
+- Mage has now more health.
+- Star buff: Deals damage to Mage and breaks nova's shield.
+- Nova now re-apears 2 levels later.
+- Firebombs now spread even more FIRE!
+- CURSORS!!!! funny. They shape.
+- Now bossbars scale (width) depending on the value.
+
 # 0.0.6 - Um... technicly.. (16th december)
 - Optimized particle limit
-- Color inversion reduced 
+- Color inversion reduced
 - Nova lazer: from line to BEAM
 - START SEQUENCE!!!! insert card
 - WINDOW/GAME!!!
