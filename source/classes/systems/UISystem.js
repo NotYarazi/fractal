@@ -355,6 +355,20 @@ export default class UISystem {
 
     // VHS-style playstyle title
     const playstyleData = game.getPlaystylePercentage();
+    const attackPercentage = Number.isFinite(playstyleData?.attack)
+      ? playstyleData.attack
+      : 50;
+    const defensePercentage = Number.isFinite(playstyleData?.defense)
+      ? playstyleData.defense
+      : 50;
+    const deathCause =
+      typeof game.deathCause === "string" && game.deathCause.trim()
+        ? game.deathCause
+        : "Unknown";
+    const deathMessage =
+      typeof game.deathMessage === "string" && game.deathMessage.trim()
+        ? game.deathMessage
+        : "No death details available.";
     ctx.font = "bold 24px Courier New";
     ctx.fillStyle = "#00ff00";
     ctx.fillText(">> PLAYSTYLE ANALYSIS <<", game.width / 2, boxY + 205);
@@ -370,14 +384,14 @@ export default class UISystem {
     ctx.fillRect(barX, barY, barWidth, barHeight);
 
     // Attack portion - blocky red with dithering
-    const attackWidth = (barWidth * playstyleData.attack) / 100;
+    const attackWidth = (barWidth * attackPercentage) / 100;
     for (let y = 0; y < barHeight; y += 2) {
       ctx.fillStyle = y % 4 === 0 ? "#ff0000" : "#cc0000";
       ctx.fillRect(barX, barY + y, attackWidth, 2);
     }
 
     // Defense portion - blocky blue with dithering
-    const defenseWidth = (barWidth * playstyleData.defense) / 100;
+    const defenseWidth = (barWidth * defensePercentage) / 100;
     for (let y = 0; y < barHeight; y += 2) {
       ctx.fillStyle = y % 4 === 0 ? "#0066ff" : "#0044cc";
       ctx.fillRect(barX + attackWidth, barY + y, defenseWidth, 2);
@@ -393,7 +407,7 @@ export default class UISystem {
     ctx.fillStyle = "#ff4444";
     ctx.textAlign = "left";
     ctx.fillText(
-      `[ATTACK: ${playstyleData.attack}%]`,
+      `[ATTACK: ${attackPercentage}%]`,
       barX,
       barY + barHeight + 35
     );
@@ -401,7 +415,7 @@ export default class UISystem {
     ctx.fillStyle = "#4444ff";
     ctx.textAlign = "right";
     ctx.fillText(
-      `[DEFENCE: ${playstyleData.defense}%]`,
+      `[DEFENCE: ${defensePercentage}%]`,
       barX + barWidth,
       barY + barHeight + 35
     );
@@ -419,7 +433,7 @@ export default class UISystem {
     ctx.font = "bold 26px Courier New";
     ctx.fillStyle = "#ff6666";
     ctx.fillText(
-      `[!] ${game.deathCause.toUpperCase()} [!]`,
+      `[!] ${deathCause.toUpperCase()} [!]`,
       game.width / 2,
       barY + barHeight + 95
     );
@@ -430,7 +444,7 @@ export default class UISystem {
 
     // Wrap text
     const maxWidth = boxWidth - 120;
-    const words = game.deathMessage.split(" ");
+    const words = deathMessage.split(" ");
     let line = "";
     let y = barY + barHeight + 135;
 
